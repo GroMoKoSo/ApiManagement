@@ -1,4 +1,4 @@
-package de.thm.apimanagement.entities;
+package de.thm.apimanagement.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,7 +9,6 @@ import java.util.Base64;
 
 @Entity
 public class Api {
-
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     int id;

@@ -1,4 +1,4 @@
-package de.thm.apimanagement.entities;
+package de.thm.apimanagement.entity;
 
 import java.util.List;
 

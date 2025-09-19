@@ -1,4 +1,4 @@
-package de.thm.apimanagement.entities;
+package de.thm.apimanagement.entity;
 
 public enum RequestType {
     POST,PUT,GET,PATCH,DELETE

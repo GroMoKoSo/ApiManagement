@@ -1,4 +1,4 @@
-package de.thm.apimanagement.entities;
+package de.thm.apimanagement.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,7 +7,6 @@ import jakarta.persistence.Id;
 
 public class ApiAccess
 {
-    @Id
     int apiId;
     String via;
 }
