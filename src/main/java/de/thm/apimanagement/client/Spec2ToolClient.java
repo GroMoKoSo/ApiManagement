@@ -3,6 +3,7 @@ package de.thm.apimanagement.client;
 import de.thm.apimanagement.entity.ToolDefinition;
 import lombok.Data;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.Arrays;
@@ -12,6 +13,7 @@ import java.util.Arrays;
  *
  * @author Justin Wolek
  */
+@Component
 public class Spec2ToolClient {
     private static final String[] ALLOWED_FILE_TYPES = {"YAML", "JSON"};
     private static final String[] ALLOWED_FORMATS = {"OpenAPI", "RAML"};

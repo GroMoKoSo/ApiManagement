@@ -2,6 +2,7 @@ package de.thm.apimanagement.client;
 
 import de.thm.apimanagement.entity.InvokeQuery;
 import de.thm.apimanagement.entity.InvokeResult;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -9,6 +10,7 @@ import org.springframework.web.client.RestClient;
  *
  * @author Justin Wolek
  */
+@Component
 public class ExternalApiClient {
     private final RestClient client;
     private final String baseUrl;
