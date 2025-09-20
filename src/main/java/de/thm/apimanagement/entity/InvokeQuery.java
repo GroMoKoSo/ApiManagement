@@ -1,16 +1,17 @@
 package de.thm.apimanagement.entity;
 
+import lombok.Data;
+
 import java.util.Map;
 
 
+@Data
 public class InvokeQuery {
-
-    RequestType requestType;
-    String requestPath;
-    Map<String,String> header;
-    String body;
-    Map<String,String> requestParam;
-    String[] pathParam;
-
-void format(){};
+    private RequestType requestType;
+    private String requestPath;
+    private Map<String, String> header;
+    private String body;
+    private Map<String, String> requestParam;
+    private String[] pathParam;
 }
+
