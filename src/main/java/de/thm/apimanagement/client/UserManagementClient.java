@@ -2,6 +2,7 @@ package de.thm.apimanagement.client;
 
 import de.thm.apimanagement.entity.Api;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -13,10 +14,11 @@ import org.springframework.web.client.RestClient;
 @Component
 public class UserManagementClient {
     private final RestClient client;
-    private final String baseUrl;
 
-    public UserManagementClient(String baseUrl) {
-        this.baseUrl = baseUrl;
+    @Value("${spring.subservices.user-management.url}")
+    private String baseUrl;
+
+    public UserManagementClient() {
         this.client = RestClient.create();
     }
 

@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: apimanagement
+
+---
+# Preconfigured profile for local testing
+spring:
+  config:
+    activate:
+      on-profile: dev
+  subservices:
+    user-management:
+      url: http://gromokoso_usermanagement:8080
+    mcp-management:
+      url: http://gromokoso_mcpmanagement:8080
+    spec2tool:
+      url: http://gromokoso_spec2tool:8080
+
+---
+# Preconfigured profile for deployment to the swa thm server
+spring:
+  config:
+    activate:
+      on-profile: prod
+  subservices:
+    user-management:
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_usermanagement
+    mcp-management:
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_mcpmanagement
+    spec2tool:
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_spec2tool

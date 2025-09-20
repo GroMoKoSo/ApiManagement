@@ -2,6 +2,7 @@ package de.thm.apimanagement.client;
 
 import de.thm.apimanagement.entity.ToolDefinition;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -19,10 +20,11 @@ public class Spec2ToolClient {
     private static final String[] ALLOWED_FORMATS = {"OpenAPI", "RAML"};
 
     private final RestClient client;
-    private final String baseUrl;
 
-    public Spec2ToolClient(String baseUrl) {
-        this.baseUrl = baseUrl;
+    @Value("${spring.subservices.spec2tool.url}")
+    private String baseUrl;
+
+    public Spec2ToolClient() {
         this.client = RestClient.create();
     }
 

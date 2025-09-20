@@ -1,6 +1,7 @@
 package de.thm.apimanagement.client;
 
 import de.thm.apimanagement.entity.ToolDefinition;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -12,10 +13,12 @@ import org.springframework.web.client.RestClient;
 @Component
 public class McpManagementClient {
     private final RestClient client;
-    private final String baseUrl;
 
-    public McpManagementClient(String baseUrl) {
-        this.baseUrl = baseUrl;
+    @Value("${spring.subservices.mcp-management.url}")
+    private String baseUrl;
+
+    public McpManagementClient() {
+
         this.client = RestClient.create();
     }
 
