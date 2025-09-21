@@ -1,12 +1,10 @@
 package de.thm.apimanagement.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import lombok.Data;
 
-public class ApiAccess
-{
-    int apiId;
-    String via;
+@Data
+public class ApiAccess {
+    private int apiId;
+    private String via;
 }
+
