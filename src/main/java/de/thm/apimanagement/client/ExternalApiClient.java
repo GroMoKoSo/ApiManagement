@@ -13,10 +13,8 @@ import org.springframework.web.client.RestClient;
 @Component
 public class ExternalApiClient {
     private final RestClient client;
-    private final String baseUrl;
 
-    public ExternalApiClient(String baseUrl) {
-        this.baseUrl = baseUrl;
+    public ExternalApiClient() {
         this.client = RestClient.create();
     }
 

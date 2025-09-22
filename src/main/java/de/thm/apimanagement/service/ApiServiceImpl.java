@@ -25,8 +25,8 @@ public class ApiServiceImpl implements de.thm.apimanagement.service.ApiService {
 
     ApiServiceImpl(ApiRepository apiRepository) {
         this.apiRepository = apiRepository;
-        this.spec2ToolClient = new Spec2ToolClient("http://localhost:8000");
-        this.userManagementClient = new UserManagementClient("http://localhost:8000");
+        this.spec2ToolClient = new Spec2ToolClient();
+        this.userManagementClient = new UserManagementClient();
     }
 
     @Override
