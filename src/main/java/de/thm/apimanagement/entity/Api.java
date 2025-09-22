@@ -9,8 +9,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Base64;
-
 @Data
 @Entity
 @NoArgsConstructor
@@ -19,7 +17,7 @@ import java.util.Base64;
 public class Api {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    int id;
+    private int id;
     private String name;
     private String description;
     private String version;
@@ -27,4 +25,3 @@ public class Api {
     private String spec;
     private String token;
 }
-
