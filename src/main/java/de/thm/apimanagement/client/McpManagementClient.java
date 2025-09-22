@@ -18,7 +18,6 @@ public class McpManagementClient {
     private String baseUrl;
 
     public McpManagementClient() {
-
         this.client = RestClient.create();
     }
 
