@@ -20,11 +20,10 @@ public class Spec2ToolClient {
     private static final String[] ALLOWED_FORMATS = {"OpenAPI", "RAML"};
 
     private final RestClient client;
+    private final String baseUrl;
 
-    @Value("${spring.subservices.spec2tool.url}")
-    private String baseUrl;
-
-    public Spec2ToolClient() {
+    public Spec2ToolClient(@Value("${spring.subservices.spec2tool.url}") String baseUrl) {
+        this.baseUrl = baseUrl;
         this.client = RestClient.create();
     }
 
