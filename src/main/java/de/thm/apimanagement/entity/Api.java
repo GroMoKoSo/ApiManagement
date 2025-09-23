@@ -21,7 +21,8 @@ public class Api {
     private String name;
     private String description;
     private String version;
-    private String dataFormat;
+    private String format;
+    private String fileType;
     private String spec;
     private String token;
 }
