@@ -1,7 +1,8 @@
 package de.thm.apimanagement.controller;
 import de.thm.apimanagement.entity.Api;
+import de.thm.apimanagement.entity.InvokeQuery;
+import de.thm.apimanagement.entity.InvokeResult;
 import de.thm.apimanagement.service.ApiService;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class ApiController {
      * @return  A list of {@link Api}s
      */
     @GetMapping("/apis")
-    public List<Api> getApis() {
+    public ResponseEntity<List<Api>> getApis() {
         return apiService.fetchApiList();
     }
 
@@ -39,8 +40,11 @@ public class ApiController {
      * @return      The newly created object
      */
     @PostMapping("/apis")
-    public Api postApi(@Validated @RequestBody Api api) {
-        return apiService.saveApi(api);
+    public ResponseEntity<Api> postApi(
+            @Validated @RequestBody Api api,
+            @RequestParam("user") String user,
+            @RequestParam(value = "group", required = false) String group) {
+        return apiService.saveApi(api, user, group);
     }
 
     /**
@@ -51,11 +55,7 @@ public class ApiController {
      */
     @GetMapping("/apis/{id}")
     public ResponseEntity<Api> getApi(@PathVariable int id) {
-        try {
-            return ResponseEntity.ok(apiService.fetchApiById(id));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return apiService.fetchApiById(id);
     }
 
     /**
@@ -66,12 +66,12 @@ public class ApiController {
      * @return      The updated {@link Api} object
      */
     @PutMapping("/apis/{id}")
-    public ResponseEntity<Api> putApi(@RequestBody Api api, @PathVariable("id") int id) {
-        try {
-            return ResponseEntity.ok(apiService.updateApi(id, api));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Api> putApi(
+            @RequestBody Api api,
+            @PathVariable("id") int id,
+            @RequestParam("user") String user,
+            @RequestParam(value = "group", required = false) String group) {
+        return apiService.updateApi(id, api, user, group);
     }
 
     /**
@@ -81,12 +81,16 @@ public class ApiController {
      * @return      An http response with code 204 - No content on success
      */
     @DeleteMapping("/apis/{id}")
-    public ResponseEntity<Void> deleteApi(@PathVariable("id") int id) {
-        try {
-            apiService.deleteApiById(id);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<?> deleteApi(
+            @PathVariable("id") int id,
+            @RequestParam("user") String user,
+            @RequestParam(value = "group", required = false) String group) {
+        return apiService.deleteApiById(id, user, group);
+    }
+
+    @PostMapping("/apis/{id}/invoke")
+    public ResponseEntity<InvokeResult> invokeApi(
+            @RequestBody InvokeQuery query) {
+        return apiService.invoke(query);
     }
 }
