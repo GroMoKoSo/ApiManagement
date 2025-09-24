@@ -4,11 +4,11 @@ spring:
 
   subservices:
     user-management:
-      url: http://gromokoso_usermanagement:8080
+      url: http://localhost:9090
     mcp-management:
-      url: http://gromokoso_mcpmanagement:8080
+      url: http://localhost:9191
     spec2tool:
-      url: http://gromokoso_spec2tool:8080
+      url: http://localhost:9292
 
   h2:
     console:
@@ -25,6 +25,9 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+
+server:
+  port: 8080
 
 ---
 # Preconfigured profile for local testing
