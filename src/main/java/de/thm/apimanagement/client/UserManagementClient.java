@@ -3,10 +3,13 @@ package de.thm.apimanagement.client;
 import de.thm.apimanagement.entity.ApiWithActive;
 import de.thm.apimanagement.entity.UserWithRole;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Objects;
 
@@ -22,41 +25,47 @@ public class UserManagementClient {
 
     public UserManagementClient(@Value("${spring.subservices.user-management.url}") String baseUrl ) {
         this.baseUrl = baseUrl;
-        this.client = RestClient.create();
+        this.client = RestClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 
     /**
      * Checks if a user is authenticated to perform actions for a certain user or group
      *
      * @param user  The user which is performing an action
-     * @param group The group which an action MAY be performed on
+     * @param group The group which an action MAY be performed on. Keep emtpy to perform the check on the user
      * @return      a {@code boolean} representing if actions are allowed or not.
      */
     public boolean isUserAuthorized(String user, String group) {
         if (!StringUtils.hasText(user)) {
             throw new IllegalArgumentException("User cannot be empty");
-        } else if (!StringUtils.hasText(group)) {
-            return true;  // Users can always edit its own tools
+        }
+
+        if (!doesUserExist(user)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
+
+        // Check if user and/or group does exist. Throw errors accordingly
+        if (!StringUtils.hasText(group)) {
+           return true;
+        } else {
+            if (!doesGroupExist(group)) throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Group does not exist");
         }
 
         // First, get all users inside the group
         UserWithRole[] userRolesInGroup = client.get()
-                .uri(baseUrl + "/groups/" + group + "/users")
+                .uri("/groups/" + group + "/users")
                 .retrieve()
                 .body(UserWithRole[].class);
-
-        // Handle case where no users are currently in the group
-        if (userRolesInGroup == null) {
-            return false;
-        }
 
         // Iterate through every user in the group.
         // Only when the given user has the Editor or Admin role APIs can be changed by the user in the group
         boolean isAuthorized = false;
+        assert userRolesInGroup != null;
         for (UserWithRole userWithRole : userRolesInGroup) {
-            if (Objects.equals(userWithRole.getUser().getUserName(), user)
-                    && ( Objects.equals(userWithRole.getRole(), "Editor")
-                    || Objects.equals(userWithRole.getRole(), "Admin"))) {
+            if (Objects.equals(userWithRole.getUsername(), user)
+                    && ( Objects.equals(userWithRole.getGroupRole(), "Editor")
+                    || Objects.equals(userWithRole.getGroupRole(), "Admin"))) {
                 isAuthorized = true;
                 break;
             }
@@ -77,7 +86,7 @@ public class UserManagementClient {
 
         // Add the Api to the group
         client.post()
-                .uri(baseUrl + "/groups/" + group + "/apis")
+                .uri("/groups/" + group + "/apis")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(apiWithActive)
                 .retrieve()
@@ -97,7 +106,7 @@ public class UserManagementClient {
 
         // Add the Api to the user
         client.post()
-                .uri(baseUrl + "/users/" + user + "/apis")
+                .uri("/users/" + user + "/apis")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(apiWithActive)
                 .retrieve()
@@ -117,7 +126,7 @@ public class UserManagementClient {
 
         // Remove the Api from the group
         client.delete()
-                .uri(baseUrl + "/groups/" + group + "/apis/" + apiId)
+                .uri("/groups/" + group + "/apis/" + apiId)
                 .retrieve()
                 .toBodilessEntity();
     }
@@ -135,7 +144,7 @@ public class UserManagementClient {
 
         // Remove the Api from the user
         client.delete()
-                .uri(baseUrl + "/users/" + user + "/apis/" + apiId)
+                .uri("/users/" + user + "/apis/" + apiId)
                 .retrieve()
                 .toBodilessEntity();
     }
@@ -147,22 +156,43 @@ public class UserManagementClient {
      * @param group The group to get the APIs from
      * @return      The APIs belonging to a user or a group
      */
-    public ApiWithActive[] fetchApis(String user, String group) {
-        if (!StringUtils.hasText(user)) {
-            throw new IllegalArgumentException("User cannot be empty");
+    public ApiWithActive[] getApisOfGroup(String group) {
+        return client.get()
+                .uri(baseUrl + "/groups/" + group + "/apis")
+                .retrieve()
+                .body(ApiWithActive[].class);
+    }
+
+    public ApiWithActive[] getApisOfUser(String user) {
+        return client.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/users/{user}/apis")
+                        .queryParam("accessViaGroup", false)
+                        .build(user))
+                .retrieve()
+                .body(ApiWithActive[].class);
+    }
+
+    public boolean doesUserExist(String username) {
+        try {
+            client.get()
+                    .uri(baseUrl + "/users/" + username)
+                    .retrieve()
+                    .toBodilessEntity();
+            return true;
+        } catch (HttpClientErrorException e) {
+            return false;
         }
+    }
 
-        if (!StringUtils.hasText(group)) {  // When group == null, query the APIs of a user
-            return client.get()
-                    .uri(baseUrl + "/users/" + user + "/apis")
-                    .retrieve()
-                    .body(ApiWithActive[].class);
-
-        } else {  // When group is present, query the APIs of a group
-            return client.get()
-                    .uri(baseUrl + "/groups/" + group + "/apis")
-                    .retrieve()
-                    .body(ApiWithActive[].class);
+    public boolean doesGroupExist(String group) {
+        try {
+            client.get()
+                    .uri(baseUrl + "/groups/" + group)
+                    .retrieve();
+            return true;
+        } catch (HttpClientErrorException e) {
+            return false;
         }
     }
 }
