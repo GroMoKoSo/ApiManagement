@@ -2,6 +2,7 @@ package de.thm.apimanagement.client;
 
 import de.thm.apimanagement.entity.ToolDefinition;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -13,22 +14,39 @@ import org.springframework.web.client.RestClient;
 @Component
 public class McpManagementClient {
     private final RestClient client;
+    private final String baseUrl;
 
-    @Value("${spring.subservices.mcp-management.url}")
-    private String baseUrl;
-
-    public McpManagementClient() {
+    public McpManagementClient(@Value("${spring.subservices.mcp-management.url}") String baseUrl) {
+        this.baseUrl = baseUrl;
         this.client = RestClient.create();
     }
 
     /**
-     * Adds an MCP tool defined as a {@link ToolDefinition} to the MCPManagement subsystem
+     * Gets one tool with a specified id
      *
-     * @param apiId         The id of the API to add tools for
+     * @param toolId    The id of the tool to get
+     * @return          a {@link ToolDefinition} representing the tool
+     */
+    public ToolDefinition getToolWithId(int toolId) {
+        return client.get()
+                .uri(baseUrl + "toolsets/{toolId}", toolId)
+                .retrieve()
+                .body(ToolDefinition.class);
+    }
+
+    /**
+     * Adds or Updates one MCP tool defined as a {@link ToolDefinition} to the MCPManagement subsystem
+     *
+     * @param toolId         The id of the API to add tools for
      * @param definition    The API specification represented as a {@link ToolDefinition}
      */
-    public void addTool(int apiId, ToolDefinition definition) {
-        // TODO: Implement
+    public void addOrUpdateTool(int toolId, ToolDefinition definition) {
+        client.put()
+                .uri(baseUrl + "/toolsets/{toolId}", toolId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(definition)
+                .retrieve()
+                .body(ToolDefinition.class);
     }
 
     /**
@@ -37,6 +55,6 @@ public class McpManagementClient {
      * @param apiId The id of the API to delete the tools of
      */
     public void deleteTool(int apiId) {
-        // TODO: Implement
+        client.delete().uri(baseUrl + "/toolsets/{apiId}", apiId);
     }
 }
