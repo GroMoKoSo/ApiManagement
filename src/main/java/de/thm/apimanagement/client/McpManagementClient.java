@@ -22,14 +22,27 @@ public class McpManagementClient {
     }
 
     /**
+     * Gets one tool with a specified id
+     *
+     * @param toolId    The id of the tool to get
+     * @return          a {@link ToolDefinition} representing the tool
+     */
+    public ToolDefinition getToolWithId(int toolId) {
+        return client.get()
+                .uri(baseUrl + "toolsets/{toolId}", toolId)
+                .retrieve()
+                .body(ToolDefinition.class);
+    }
+
+    /**
      * Adds or Updates one MCP tool defined as a {@link ToolDefinition} to the MCPManagement subsystem
      *
-     * @param apiId         The id of the API to add tools for
+     * @param toolId         The id of the API to add tools for
      * @param definition    The API specification represented as a {@link ToolDefinition}
      */
-    public void addOrUpdateTool(int apiId, ToolDefinition definition) {
+    public void addOrUpdateTool(int toolId, ToolDefinition definition) {
         client.put()
-                .uri(baseUrl + "/toolsets/{apiId}", apiId)
+                .uri(baseUrl + "/toolsets/{toolId}", toolId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(definition)
                 .retrieve()
