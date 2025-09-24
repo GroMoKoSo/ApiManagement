@@ -5,6 +5,7 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.util.Arrays;
@@ -37,7 +38,7 @@ public class Spec2ToolClient {
      * @return          The definition of an MCP tool as a {@link ToolDefinition} object
      */
     public ToolDefinition convertSpec2Tool(String format, String fileType, String spec) {
-        if (format.isEmpty() || fileType.isEmpty() || spec.isEmpty()) {
+        if (!StringUtils.hasText(format) || !StringUtils.hasText(fileType) || !StringUtils.hasText(spec)) {
             throw new IllegalArgumentException("Format, File Type and Spec cannot be empty");
         } else if (!Arrays.asList(ALLOWED_FILE_TYPES).contains(fileType)) {
             throw new IllegalArgumentException("File Type not supported");

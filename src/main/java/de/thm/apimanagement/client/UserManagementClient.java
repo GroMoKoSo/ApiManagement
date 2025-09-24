@@ -1,11 +1,11 @@
 package de.thm.apimanagement.client;
 
-import de.thm.apimanagement.entity.Api;
 import de.thm.apimanagement.entity.ApiWithActive;
 import de.thm.apimanagement.entity.UserWithRole;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.util.Objects;
@@ -33,9 +33,9 @@ public class UserManagementClient {
      * @return      a {@code boolean} representing if actions are allowed or not.
      */
     public boolean isUserAuthorized(String user, String group) {
-        if (user.isEmpty()) {
+        if (!StringUtils.hasText(user)) {
             throw new IllegalArgumentException("User cannot be empty");
-        } else if (group.isEmpty()) {
+        } else if (!StringUtils.hasText(group)) {
             return true;  // Users can always edit its own tools
         }
 
@@ -71,7 +71,7 @@ public class UserManagementClient {
      * @param group         The group to add the api id to
      */
     public void addApiToGroup(String group, ApiWithActive apiWithActive) {
-        if (group.isEmpty()) {
+        if (!StringUtils.hasText(group)) {
             throw new IllegalArgumentException("Group cannot be empty");
         }
 
@@ -91,7 +91,7 @@ public class UserManagementClient {
      * @param user          The user to add the api id to
      */
     public void addApiToUser(String user, ApiWithActive apiWithActive) {
-        if (user.isEmpty()) {
+        if (!StringUtils.hasText(user)) {
             throw new IllegalArgumentException("User cannot be empty");
         }
 
@@ -111,12 +111,15 @@ public class UserManagementClient {
      * @param apiId The id of the api to remove
      */
     public void deleteApiFromGroup(String group, int apiId) {
-        if (group.isEmpty()) {
+        if (!StringUtils.hasText(group)) {
             throw new IllegalArgumentException("Group cannot be empty");
         }
 
         // Remove the Api from the group
-        client.delete().uri(baseUrl + "/groups/" + group + "/apis/" + apiId);
+        client.delete()
+                .uri(baseUrl + "/groups/" + group + "/apis/" + apiId)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     /**
@@ -126,38 +129,40 @@ public class UserManagementClient {
      * @param apiId The id of the api to remove
      */
     public void deleteApiFromUser(String user, int apiId) {
-        if (user.isEmpty()) {
+        if (!StringUtils.hasText(user)) {
             throw new IllegalArgumentException("User cannot be empty");
         }
 
         // Remove the Api from the user
-        client.delete().uri(baseUrl + "/users/" + user + "/apis/" + apiId);
+        client.delete()
+                .uri(baseUrl + "/users/" + user + "/apis/" + apiId)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     /**
      * Fetches the APIs of either a user or a group and returns them.
-     * TODO: This method may be removed as it is not needed as of now.
      *
      * @param user  The user to get the APIs from
      * @param group The group to get the APIs from
      * @return      The APIs belonging to a user or a group
      */
-    public Api[] fetchApis(String user, String group) {
-        if (user.isEmpty()) {
+    public ApiWithActive[] fetchApis(String user, String group) {
+        if (!StringUtils.hasText(user)) {
             throw new IllegalArgumentException("User cannot be empty");
         }
 
-        if (group.isEmpty()) {  // When group == null, query the APIs of a user
+        if (!StringUtils.hasText(group)) {  // When group == null, query the APIs of a user
             return client.get()
                     .uri(baseUrl + "/users/" + user + "/apis")
                     .retrieve()
-                    .body(Api[].class);
+                    .body(ApiWithActive[].class);
 
         } else {  // When group is present, query the APIs of a group
             return client.get()
                     .uri(baseUrl + "/groups/" + group + "/apis")
                     .retrieve()
-                    .body(Api[].class);
+                    .body(ApiWithActive[].class);
         }
     }
 }
