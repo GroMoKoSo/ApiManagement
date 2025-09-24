@@ -5,7 +5,6 @@ import de.thm.apimanagement.entity.InvokeResult;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.net.URLEncoder;
@@ -52,15 +51,10 @@ public class ExternalApiClient {
      *                          key and {@code date} the value.
      * @return                  A formatted URL path which contains all path- and request parameters.
      */
-    private String formatPath(String requestPath, String[] pathParameter, Map<String, String> requestParameter) {
-        if (StringUtils.countOccurrencesOf(requestPath, "<>") != pathParameter.length) {
-            throw new IllegalArgumentException(
-                    "URL must contains exactly as many placeholders as there are items inside pathParameter");
-        }
-
+    private String formatPath(String requestPath, Map<String, String> pathParameter, Map<String, String> requestParameter) {
         // Replace path parameter placeholders with actual values
-        for (String parameter : pathParameter) {
-            requestPath = requestPath.replace("<>", parameter);
+        for (Map.Entry<String, String> entry : pathParameter.entrySet()) {
+            requestPath = requestPath.replace("<" + entry.getKey() + ">", entry.getValue());
         }
 
         // URLEncoder makes handling spaces in requestParameters WAY easier.

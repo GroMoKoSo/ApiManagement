@@ -12,6 +12,6 @@ public class InvokeQuery {
     private Map<String, String> header;
     private String body;
     private Map<String, String> requestParam;
-    private String[] pathParam;
+    private Map<String, String> pathParam;
 }
 
