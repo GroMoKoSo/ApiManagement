@@ -29,7 +29,7 @@ public class McpManagementClient {
      */
     public ToolDefinition getToolWithId(int toolId) {
         return client.get()
-                .uri(baseUrl + "toolsets/{toolId}", toolId)
+                .uri(baseUrl + "/toolsets/{toolId}", toolId)
                 .retrieve()
                 .body(ToolDefinition.class);
     }
@@ -55,6 +55,9 @@ public class McpManagementClient {
      * @param apiId The id of the API to delete the tools of
      */
     public void deleteTool(int apiId) {
-        client.delete().uri(baseUrl + "/toolsets/{apiId}", apiId);
+        client.delete()
+                .uri(baseUrl + "/toolsets/{apiId}", apiId)
+                .retrieve()
+                .toBodilessEntity();
     }
 }
