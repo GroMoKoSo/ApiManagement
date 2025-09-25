@@ -4,11 +4,11 @@ spring:
 
   subservices:
     user-management:
-      url: http://localhost:9090
+      url: http://gromokoso-usermanagement:8080
     mcp-management:
-      url: http://localhost:9191
+      url: http://gromokoso-mcpmanagement:8080
     spec2tool:
-      url: http://localhost:9292
+      url: http://gromokoso-spec2tool:8080
 
   h2:
     console:
@@ -37,11 +37,11 @@ spring:
       on-profile: dev
   subservices:
     user-management:
-      url: http://gromokoso_usermanagement:8080
+      url: http://gromokoso-usermanagement:8080
     mcp-management:
-      url: http://gromokoso_mcpmanagement:8080
+      url: http://gromokoso-mcpmanagement:8080
     spec2tool:
-      url: http://gromokoso_spec2tool:8080
+      url: http://gromokoso-spec2tool:8080
 
 ---
 # Preconfigured profile for deployment to the swa thm server
@@ -51,8 +51,8 @@ spring:
       on-profile: prod
   subservices:
     user-management:
-      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_usermanagement
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-usermanagement
     mcp-management:
-      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_mcpmanagement
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-mcpmanagement
     spec2tool:
-      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_spec2tool
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-spec2tool
