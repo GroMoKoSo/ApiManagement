@@ -56,8 +56,11 @@ public interface ApiService {
     /**
      * Handles querying an HTTP request to an API according to the {@link InvokeQuery}
      *
+     * @param apiId The api to invoke
+     * @param user  the user which is trying to invoke an api
+     * @param group the group an api might belong to
      * @param query The query which should be performed
      * @return      A {@link InvokeResult} which wraps the HTTP response
      */
-    public InvokeResult invoke(InvokeQuery query);
+    public InvokeResult invoke(int apiId, String user, String group, InvokeQuery query);
 }

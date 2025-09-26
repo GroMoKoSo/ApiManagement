@@ -114,7 +114,17 @@ public class ApiController {
 
     @PostMapping("/apis/{id}/invoke")
     public ResponseEntity<InvokeResult> invokeApi(
-            @RequestBody InvokeQuery query) {
-        return ResponseEntity.ok(apiService.invoke(query));
+            @RequestBody InvokeQuery query,
+            @PathVariable("id") int id,
+            @RequestParam("user") String user,
+            @RequestParam(value = "group", required = false) String group) {
+        try {
+            return ResponseEntity.ok(apiService.invoke(id, user, group, query));
+        } catch (Exception e) {
+            if (e instanceof ServiceNotAllowed) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            else if (e instanceof ServiceNotFound) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            else return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
     }
 }

@@ -277,7 +277,41 @@ public class ApiServiceImpl implements ApiService {
     }
 
     @Override
-    public InvokeResult invoke(InvokeQuery query) {
+    public InvokeResult invoke(int apiId, String user, String group, InvokeQuery query) {
+        logger.debug("Checking if api exists...");
+        Api api = apiRepository.findById(apiId).orElse(null);
+        if (api == null) throw new ServiceNotFound("Api does not exist!");
+
+        try {
+            logger.debug("Checking if invoke is allowed...");
+            if (!userManagementClient.canInvoke(user, group)) {
+                throw new ServiceNotAllowed("Invoke not allowed!");
+            }
+
+            logger.debug("Checking if api exists in userManagement...");
+            List<ApiWithActive> apiWithActive = Collections.emptyList();
+            if (StringUtils.hasText(user) && !StringUtils.hasText(group)) {
+                apiWithActive = Arrays.asList(userManagementClient.getApisOfUser(user));
+            } else if (StringUtils.hasText(user) && StringUtils.hasText(group)) {
+                apiWithActive = Arrays.asList(userManagementClient.getApisOfGroup(group));
+            }
+
+            boolean isApiPresent = apiWithActive.stream()
+                    .anyMatch(a -> a.getApiId() == apiId);
+
+            if (!isApiPresent) {
+                throw new ResponseStatusException(NOT_FOUND, "Api does not exist!");
+            }
+        } catch (HttpClientErrorException e) {
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.FORBIDDEN) throw new ServiceNotAllowed("Operation not allowed!");
+            else if (status == HttpStatus.NOT_FOUND) throw new ServiceNotFound("Resource not found");
+            else throw new ServiceError(e.getMessage());
+
+        } catch (Exception e) {
+            throw new ServiceError(e.getMessage());
+        }
+
         return externalApiClient.invoke(query);
     }
 

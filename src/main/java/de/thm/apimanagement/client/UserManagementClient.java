@@ -71,6 +71,45 @@ public class UserManagementClient {
     }
 
     /**
+     * Checks if a given user is theoretically allowed to invoke their own apis or apis in a group
+     *
+     * @param user  The user which tries to invoke an api
+     * @param group The group where a user might try to invoke an api
+     * @return A boolean representing if a user can invoke an api
+     */
+    public boolean canInvoke(String user, String group) {
+        if (!StringUtils.hasText(user)) {
+            throw new IllegalArgumentException("User cannot be empty");
+        }
+
+        if (!doesUserExist(user)) throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "User does not exist");
+        if (!StringUtils.hasText(group)) {
+            return true;
+        } else {
+            if (!doesGroupExist(group)) throw new HttpClientErrorException(
+                    HttpStatus.NOT_FOUND, "Group does not exist");
+        }
+
+        // First, get all users inside the group
+        UserWithRole[] userRolesInGroup = client.get()
+                .uri("/groups/{group}/users", group)
+                .retrieve()
+                .body(UserWithRole[].class);
+
+        // Iterate through every user in the group.
+        // Only when the given user exists it can invoke apis in this group
+        boolean isAuthorized = false;
+        assert userRolesInGroup != null;
+        for (UserWithRole userWithRole : userRolesInGroup) {
+            if (Objects.equals(userWithRole.getUsername(), user)) {
+                isAuthorized = true;
+                break;
+            }
+        }
+        return isAuthorized;
+    }
+
+    /**
      * Adds a new Api id to a specified group
      *
      * @param apiWithActive The object containing the Api id and a boolean representing if the Api should be active
