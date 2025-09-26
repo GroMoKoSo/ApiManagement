@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Objects;
 
@@ -21,10 +20,8 @@ import java.util.Objects;
 @Component
 public class UserManagementClient {
     private final RestClient client;
-    private final String baseUrl;
 
     public UserManagementClient(@Value("${spring.subservices.user-management.url}") String baseUrl ) {
-        this.baseUrl = baseUrl;
         this.client = RestClient.builder()
                 .baseUrl(baseUrl)
                 .build();
@@ -42,19 +39,19 @@ public class UserManagementClient {
             throw new IllegalArgumentException("User cannot be empty");
         }
 
-        if (!doesUserExist(user)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
+        if (!doesUserExist(user)) throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "User does not exist");
 
         // Check if user and/or group does exist. Throw errors accordingly
         if (!StringUtils.hasText(group)) {
            return true;
         } else {
-            if (!doesGroupExist(group)) throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Group does not exist");
+            if (!doesGroupExist(group)) throw new HttpClientErrorException(
+                    HttpStatus.NOT_FOUND, "Group does not exist");
         }
 
         // First, get all users inside the group
         UserWithRole[] userRolesInGroup = client.get()
-                .uri("/groups/" + group + "/users")
+                .uri("/groups/{group}/users", group)
                 .retrieve()
                 .body(UserWithRole[].class);
 
@@ -86,7 +83,7 @@ public class UserManagementClient {
 
         // Add the Api to the group
         client.post()
-                .uri("/groups/" + group + "/apis")
+                .uri("/groups/{group}/apis", group)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(apiWithActive)
                 .retrieve()
@@ -106,7 +103,7 @@ public class UserManagementClient {
 
         // Add the Api to the user
         client.post()
-                .uri("/users/" + user + "/apis")
+                .uri("/users/{user/apis", user)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(apiWithActive)
                 .retrieve()
@@ -126,7 +123,7 @@ public class UserManagementClient {
 
         // Remove the Api from the group
         client.delete()
-                .uri("/groups/" + group + "/apis/" + apiId)
+                .uri("/groups/{group}/apis/{apiId}", group, apiId)
                 .retrieve()
                 .toBodilessEntity();
     }
@@ -144,25 +141,30 @@ public class UserManagementClient {
 
         // Remove the Api from the user
         client.delete()
-                .uri("/users/" + user + "/apis/" + apiId)
+                .uri("/users/{user}/apis/{apiId}", user, apiId)
                 .retrieve()
                 .toBodilessEntity();
     }
 
     /**
-     * Fetches the APIs of either a user or a group and returns them.
+     * Fetches the APIs of a group and returns them.
      *
-     * @param user  The user to get the APIs from
      * @param group The group to get the APIs from
      * @return      The APIs belonging to a user or a group
      */
     public ApiWithActive[] getApisOfGroup(String group) {
         return client.get()
-                .uri(baseUrl + "/groups/" + group + "/apis")
+                .uri("/groups/{group}/apis", group)
                 .retrieve()
                 .body(ApiWithActive[].class);
     }
 
+    /**
+     * Fetches the APIs of a user and returns them.
+     *
+     * @param user The user to get the APIs from
+     * @return      The APIs belonging to a user or a group
+     */
     public ApiWithActive[] getApisOfUser(String user) {
         return client.get()
                 .uri(uriBuilder -> uriBuilder
@@ -176,11 +178,11 @@ public class UserManagementClient {
     public boolean doesUserExist(String username) {
         try {
             client.get()
-                    .uri(baseUrl + "/users/" + username)
+                    .uri("/users/{username}", username)
                     .retrieve()
                     .toBodilessEntity();
             return true;
-        } catch (HttpClientErrorException e) {
+        } catch (Exception e) {
             return false;
         }
     }
@@ -188,10 +190,11 @@ public class UserManagementClient {
     public boolean doesGroupExist(String group) {
         try {
             client.get()
-                    .uri(baseUrl + "/groups/" + group)
-                    .retrieve();
+                    .uri("/groups/{group}", group)
+                    .retrieve()
+                    .toBodilessEntity();
             return true;
-        } catch (HttpClientErrorException e) {
+        } catch (Exception e) {
             return false;
         }
     }
