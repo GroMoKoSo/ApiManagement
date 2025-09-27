@@ -1,9 +1,6 @@
 package de.thm.apimanagement.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,6 +20,7 @@ public class Api {
     private String version;
     private String format;
     private String fileType;
+    @Lob
     private String spec;
     private String token;
 }

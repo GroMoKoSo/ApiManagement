@@ -2,11 +2,13 @@ package de.thm.apimanagement.entity;
 
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 public class Tool {
-    private String title;
+    private String name;
     private String description;
-    private String endpoint;
-    private String inputSchema;
     private String requestMethod;
+    private String endpoint;
+    private Map<String, Object> inputSchema;
 }
