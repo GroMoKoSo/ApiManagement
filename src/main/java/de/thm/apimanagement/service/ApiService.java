@@ -20,7 +20,7 @@ public interface ApiService {
      * @param api   The API to save
      * @return      The saved API
      */
-    public Api saveApi(Api api);
+    public Api saveApi(Api api, String user, String group);
 
     /**
      * Handles updating an API
@@ -29,14 +29,14 @@ public interface ApiService {
      * @param api   The API object which should be used to update its current instance
      * @return      The updated API
      */
-    public Api updateApi(int apiId, Api api);
+    public Api updateApi(int apiId, Api api, String user, String group);
 
     /**
      * Handles deleting an API
      *
      * @param apiId The id of the API which should be deleted
      */
-    public void deleteApiById(int apiId);
+    public void deleteApiById(int apiId, String user, String group);
 
     /**
      * Gets an array which contains all APIs
@@ -56,16 +56,11 @@ public interface ApiService {
     /**
      * Handles querying an HTTP request to an API according to the {@link InvokeQuery}
      *
+     * @param apiId The api to invoke
+     * @param user  the user which is trying to invoke an api
+     * @param group the group an api might belong to
      * @param query The query which should be performed
      * @return      A {@link InvokeResult} which wraps the HTTP response
      */
-    public InvokeResult invoke(InvokeQuery query);
-
-    /**
-     * Takes an {@link InvokeQuery} and returns a string with the URL.
-     *
-     * @param query The query which should be converted
-     * @return      A string, containing the request target URL
-     */
-    public String formatRequestPath(InvokeQuery query);
+    public InvokeResult invoke(int apiId, String user, String group, InvokeQuery query);
 }

@@ -1,7 +1,11 @@
 package de.thm.apimanagement.controller;
 import de.thm.apimanagement.entity.Api;
+import de.thm.apimanagement.entity.InvokeQuery;
+import de.thm.apimanagement.entity.InvokeResult;
 import de.thm.apimanagement.service.ApiService;
-import jakarta.persistence.EntityNotFoundException;
+import de.thm.apimanagement.service.exceptions.ServiceNotAllowed;
+import de.thm.apimanagement.service.exceptions.ServiceNotFound;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -28,8 +32,8 @@ public class ApiController {
      * @return  A list of {@link Api}s
      */
     @GetMapping("/apis")
-    public List<Api> getApis() {
-        return apiService.fetchApiList();
+    public ResponseEntity<List<Api>> getApis() {
+        return ResponseEntity.ok(apiService.fetchApiList());
     }
 
     /**
@@ -39,8 +43,18 @@ public class ApiController {
      * @return      The newly created object
      */
     @PostMapping("/apis")
-    public Api postApi(@Validated @RequestBody Api api) {
-        return apiService.saveApi(api);
+    public ResponseEntity<Api> postApi(
+            @Validated @RequestBody Api api,
+            @RequestParam("user") String user,
+            @RequestParam(value = "group", required = false) String group) {
+        try {
+            return ResponseEntity.ok(apiService.saveApi(api, user, group));
+        } catch (Exception e) {
+            if (e instanceof ServiceNotAllowed) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            else if (e instanceof ServiceNotFound) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            else return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
     }
 
     /**
@@ -51,11 +65,7 @@ public class ApiController {
      */
     @GetMapping("/apis/{id}")
     public ResponseEntity<Api> getApi(@PathVariable int id) {
-        try {
-            return ResponseEntity.ok(apiService.fetchApiById(id));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(apiService.fetchApiById(id));
     }
 
     /**
@@ -66,12 +76,19 @@ public class ApiController {
      * @return      The updated {@link Api} object
      */
     @PutMapping("/apis/{id}")
-    public ResponseEntity<Api> putApi(@RequestBody Api api, @PathVariable("id") int id) {
+    public ResponseEntity<Api> putApi(
+            @RequestBody Api api,
+            @PathVariable("id") int id,
+            @RequestParam("user") String user,
+            @RequestParam(value = "group", required = false) String group) {
         try {
-            return ResponseEntity.ok(apiService.updateApi(id, api));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(apiService.updateApi(id, api, user, group));
+        } catch (Exception e) {
+            if (e instanceof ServiceNotAllowed) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            else if (e instanceof ServiceNotFound) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            else return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+
     }
 
     /**
@@ -81,12 +98,33 @@ public class ApiController {
      * @return      An http response with code 204 - No content on success
      */
     @DeleteMapping("/apis/{id}")
-    public ResponseEntity<Void> deleteApi(@PathVariable("id") int id) {
+    public ResponseEntity<?> deleteApi(
+            @PathVariable("id") int id,
+            @RequestParam("user") String user,
+            @RequestParam(value = "group", required = false) String group) {
         try {
-            apiService.deleteApiById(id);
+            apiService.deleteApiById(id, user, group);
             return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            if (e instanceof ServiceNotAllowed) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            else if (e instanceof ServiceNotFound) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            else return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @PostMapping("/apis/{id}/invoke")
+    public ResponseEntity<InvokeResult> invokeApi(
+            @RequestBody InvokeQuery query,
+            @PathVariable("id") int id,
+            @RequestParam("user") String user,
+            @RequestParam(value = "group", required = false) String group) {
+        try {
+            return ResponseEntity.ok(apiService.invoke(id, user, group, query));
+        } catch (Exception e) {
+            if (e instanceof ServiceNotAllowed) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            else if (e instanceof ServiceNotFound) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            else return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
     }
 }

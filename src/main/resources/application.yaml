@@ -4,11 +4,11 @@ spring:
 
   subservices:
     user-management:
-      url: http://gromokoso_usermanagement:8080
+      url: http://gromokoso-usermanagement:8080
     mcp-management:
-      url: http://gromokoso_mcpmanagement:8080
+      url: http://gromokoso-mcpmanagement:8080
     spec2tool:
-      url: http://gromokoso_spec2tool:8080
+      url: http://gromokoso-spec2tool:8080
 
   h2:
     console:
@@ -16,16 +16,28 @@ spring:
       path: /h2-console
 
   datasource:
-    url: jdbc:h2:mem:dcbapp
-    driverClassName: org.h2.Driver
-    username: sa
-    password: password
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.mariadb.jdbc.Driver
 
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
+    show-sql: true
+    open-in-view: false
 
+server:
+  port: 8080
+
+logging:
+  level:
+    de.thm.apimanagement: DEBUG
+    org.hibernate.sql: DEBUG
 ---
 # Preconfigured profile for local testing
 spring:
@@ -34,11 +46,11 @@ spring:
       on-profile: dev
   subservices:
     user-management:
-      url: http://gromokoso_usermanagement:8080
+      url: http://gromokoso-usermanagement:8080
     mcp-management:
-      url: http://gromokoso_mcpmanagement:8080
+      url: http://gromokoso-mcpmanagement:8080
     spec2tool:
-      url: http://gromokoso_spec2tool:8080
+      url: http://gromokoso-spec2tool:8080
 
 ---
 # Preconfigured profile for deployment to the swa thm server
@@ -48,8 +60,8 @@ spring:
       on-profile: prod
   subservices:
     user-management:
-      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_usermanagement
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-usermanagement
     mcp-management:
-      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_mcpmanagement
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-mcpmanagement
     spec2tool:
-      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso_spec2tool
+      url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-spec2tool
