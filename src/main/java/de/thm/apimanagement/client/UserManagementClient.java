@@ -142,7 +142,7 @@ public class UserManagementClient {
 
         // Add the Api to the user
         client.post()
-                .uri("/users/{user/apis", user)
+                .uri("/users/{user}/apis", user)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(apiWithActive)
                 .retrieve()
