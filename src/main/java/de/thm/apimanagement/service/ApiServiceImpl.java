@@ -4,6 +4,8 @@ import de.thm.apimanagement.client.ExternalApiClient;
 import de.thm.apimanagement.client.McpManagementClient;
 import de.thm.apimanagement.client.Spec2ToolClient;
 import de.thm.apimanagement.client.UserManagementClient;
+import de.thm.apimanagement.client.exceptions.ClientAuthenticationException;
+import de.thm.apimanagement.client.exceptions.ClientNotFoundException;
 import de.thm.apimanagement.commands.*;
 import de.thm.apimanagement.entity.*;
 import de.thm.apimanagement.repository.ApiRepository;
@@ -13,17 +15,11 @@ import de.thm.apimanagement.service.exceptions.ServiceNotFound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
-
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of ApiService. Contains the business logic of the microservice
@@ -56,12 +52,6 @@ public class ApiServiceImpl implements ApiService {
 
         logger.info("====== Starting Save Api Transaction ======");
         try {
-            logger.debug("Checking if operation is authorized...");
-            if (!userManagementClient.isUserAuthorized(user, group)) {
-                logger.error("Operation is not allower! Aborting...");
-                throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "Operation not allowed");
-            }
-
             logger.debug("Saving api to repository...");
             SaveApiToRepositoryCommand saveApiToRepositoryCommand = new SaveApiToRepositoryCommand(
                     apiRepository, api);
@@ -95,12 +85,13 @@ public class ApiServiceImpl implements ApiService {
             addOrUpdateMcpToolCommand.execute();
             commands.add(addOrUpdateMcpToolCommand);
 
-        } catch (HttpClientErrorException e) {
+        } catch (ClientNotFoundException e) {
             handleFailure(e, commands);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.FORBIDDEN) throw new ServiceNotAllowed("Operation not allowed!");
-            else if (status == HttpStatus.NOT_FOUND) throw new ServiceNotFound("Resource not found");
-            else throw new ServiceError(e.getMessage());
+            throw new ServiceNotFound("Resource not found");
+
+        } catch (ClientAuthenticationException e) {
+            handleFailure(e, commands);
+            throw new ServiceNotAllowed("Authentication failed!");
 
         } catch (Exception e) {
             handleFailure(e, commands);
@@ -124,13 +115,7 @@ public class ApiServiceImpl implements ApiService {
             logger.debug("Checking if api exists in repository...");
             if (apiRepository.findById(apiId).orElse(null) == null) {
                 logger.error("Api with id " + apiId + " does not exist!");
-                throw new ResponseStatusException(NOT_FOUND, "Api does not exist!");
-            }
-
-            logger.debug("Checking if operation is authorized...");
-            if (!userManagementClient.isUserAuthorized(user, group)) {
-                logger.error("Operation is not authorized! Aborting...");
-                throw new ResponseStatusException(FORBIDDEN, "Operation is not authorized!");
+                throw new ClientNotFoundException("Api does not exist!");
             }
 
             logger.debug("Checking if api exists in userManagement...");
@@ -145,7 +130,7 @@ public class ApiServiceImpl implements ApiService {
                     .anyMatch(a -> a.getApiId() == apiId);
 
             if (!isApiPresent) {
-                throw new ResponseStatusException(NOT_FOUND, "Api does not exist!");
+                throw new ClientNotFoundException("Api does not exist!");
             }
 
             logger.debug("Updating api in repository...");
@@ -166,12 +151,13 @@ public class ApiServiceImpl implements ApiService {
             addOrUpdateMcpToolCommand.execute();
             commands.add(addOrUpdateMcpToolCommand);
 
-        } catch (HttpClientErrorException e) {
+        } catch (ClientNotFoundException e) {
             handleFailure(e, commands);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.FORBIDDEN) throw new ServiceNotAllowed("Operation not allowed!");
-            else if (status == HttpStatus.NOT_FOUND) throw new ServiceNotFound("Resource not found");
-            else throw new ServiceError(e.getMessage());
+            throw new ServiceNotFound("Resource not found");
+
+        } catch (ClientAuthenticationException e) {
+            handleFailure(e, commands);
+            throw new ServiceNotAllowed("Authentication failed!");
 
         } catch (Exception e) {
             handleFailure(e, commands);
@@ -194,13 +180,7 @@ public class ApiServiceImpl implements ApiService {
         try {
             logger.debug("Checking if api exists...");
             Api api = apiRepository.findById(apiId).orElse(null);
-            if (api == null) throw new ResponseStatusException(NOT_FOUND, "Api does not exist!");
-
-            logger.debug("Checking if operation is authorized...");
-            if (!userManagementClient.isUserAuthorized(user, group)) {
-                logger.error("Operation is not authorized! Aborting...");
-                throw new ResponseStatusException(FORBIDDEN, "Operation is not authorized!");
-            }
+            if (api == null) throw new ClientNotFoundException("Api does not exist!");
 
             logger.debug("Checking if api exists in userManagement...");
             List<ApiWithActive> apiWithActive = Collections.emptyList();
@@ -216,7 +196,7 @@ public class ApiServiceImpl implements ApiService {
             }
 
             if (userManagementApiBackup == null) {
-                throw new ResponseStatusException(NOT_FOUND, "Api does not exist!");
+                throw new ClientNotFoundException("Api does not exist!");
             }
 
             if (!StringUtils.hasText(group)) {
@@ -249,12 +229,13 @@ public class ApiServiceImpl implements ApiService {
             deleteApiFromRepositoryCommand.execute();
             commands.add(deleteApiFromRepositoryCommand);
 
-        } catch (HttpClientErrorException e) {
+        } catch (ClientNotFoundException e) {
             handleFailure(e, commands);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.FORBIDDEN) throw new ServiceNotAllowed("Operation not allowed!");
-            else if (status == HttpStatus.NOT_FOUND) throw new ServiceNotFound("Resource not found");
-            else throw new ServiceError(e.getMessage());
+            throw new ServiceNotFound("Resource not found");
+
+        } catch (ClientAuthenticationException e) {
+            handleFailure(e, commands);
+            throw new ServiceNotAllowed("Authentication failed!");
 
         } catch (Exception e) {
             handleFailure(e, commands);
@@ -334,16 +315,11 @@ public class ApiServiceImpl implements ApiService {
 
     @Override
     public InvokeResult invoke(int apiId, String user, String group, InvokeQuery query) {
-        logger.debug("Checking if api exists...");
+        logger.debug("Checking if api exists in repository...");
         Api api = apiRepository.findById(apiId).orElse(null);
         if (api == null) throw new ServiceNotFound("Api does not exist!");
 
         try {
-            logger.debug("Checking if invoke is allowed...");
-            if (!userManagementClient.canInvoke(user, group)) {
-                throw new ServiceNotAllowed("Invoke not allowed!");
-            }
-
             logger.debug("Checking if api exists in userManagement...");
             List<ApiWithActive> apiWithActive = Collections.emptyList();
             if (StringUtils.hasText(user) && !StringUtils.hasText(group)) {
@@ -356,13 +332,14 @@ public class ApiServiceImpl implements ApiService {
                     .anyMatch(a -> a.getApiId() == apiId);
 
             if (!isApiPresent) {
-                throw new ResponseStatusException(NOT_FOUND, "Api does not exist!");
+                throw new ClientNotFoundException("Api does not exist!");
             }
-        } catch (HttpClientErrorException e) {
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.FORBIDDEN) throw new ServiceNotAllowed("Operation not allowed!");
-            else if (status == HttpStatus.NOT_FOUND) throw new ServiceNotFound("Resource not found");
-            else throw new ServiceError(e.getMessage());
+
+        } catch (ClientNotFoundException e) {
+            throw new ServiceNotFound("Resource not found");
+
+        } catch (ClientAuthenticationException e) {
+            throw new ServiceNotAllowed("Authentication failed!");
 
         } catch (Exception e) {
             throw new ServiceError(e.getMessage());
