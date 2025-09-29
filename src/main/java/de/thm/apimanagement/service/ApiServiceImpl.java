@@ -4,12 +4,12 @@ import de.thm.apimanagement.client.ExternalApiClient;
 import de.thm.apimanagement.client.McpManagementClient;
 import de.thm.apimanagement.client.Spec2ToolClient;
 import de.thm.apimanagement.client.UserManagementClient;
-import de.thm.apimanagement.client.exceptions.ClientAuthenticationException;
 import de.thm.apimanagement.client.exceptions.ClientNotFoundException;
 import de.thm.apimanagement.commands.*;
 import de.thm.apimanagement.entity.*;
 import de.thm.apimanagement.repository.ApiRepository;
 import de.thm.apimanagement.service.exceptions.ServiceError;
+import de.thm.apimanagement.service.exceptions.ServiceExceptionHandler;
 import de.thm.apimanagement.service.exceptions.ServiceNotAllowed;
 import de.thm.apimanagement.service.exceptions.ServiceNotFound;
 import org.slf4j.Logger;
@@ -85,17 +85,9 @@ public class ApiServiceImpl implements ApiService {
             addOrUpdateMcpToolCommand.execute();
             commands.add(addOrUpdateMcpToolCommand);
 
-        } catch (ClientNotFoundException e) {
-            handleFailure(e, commands);
-            throw new ServiceNotFound("Resource not found");
-
-        } catch (ClientAuthenticationException e) {
-            handleFailure(e, commands);
-            throw new ServiceNotAllowed("Authentication failed!");
-
         } catch (Exception e) {
             handleFailure(e, commands);
-            throw new ServiceError(e.getMessage());
+            throw ServiceExceptionHandler.handleException(e);
         }
 
         logger.info("====== Ending Transaction: SUCCESS ======");
@@ -151,17 +143,9 @@ public class ApiServiceImpl implements ApiService {
             addOrUpdateMcpToolCommand.execute();
             commands.add(addOrUpdateMcpToolCommand);
 
-        } catch (ClientNotFoundException e) {
-            handleFailure(e, commands);
-            throw new ServiceNotFound("Resource not found");
-
-        } catch (ClientAuthenticationException e) {
-            handleFailure(e, commands);
-            throw new ServiceNotAllowed("Authentication failed!");
-
         } catch (Exception e) {
             handleFailure(e, commands);
-            throw new ServiceError(e.getMessage());
+            throw ServiceExceptionHandler.handleException(e);
         }
 
         logger.info("====== Ending Transaction: SUCCESS ======");
@@ -229,17 +213,9 @@ public class ApiServiceImpl implements ApiService {
             deleteApiFromRepositoryCommand.execute();
             commands.add(deleteApiFromRepositoryCommand);
 
-        } catch (ClientNotFoundException e) {
-            handleFailure(e, commands);
-            throw new ServiceNotFound("Resource not found");
-
-        } catch (ClientAuthenticationException e) {
-            handleFailure(e, commands);
-            throw new ServiceNotAllowed("Authentication failed!");
-
         } catch (Exception e) {
             handleFailure(e, commands);
-            throw new ServiceError(e.getMessage());
+            throw ServiceExceptionHandler.handleException(e);
         }
 
         logger.info("====== Ending Transaction: SUCCESS ======");
@@ -266,14 +242,8 @@ public class ApiServiceImpl implements ApiService {
                     .filter(local -> activeApiIds.contains(local.getId()))
                     .collect(Collectors.toList());
 
-        } catch (ClientNotFoundException e) {
-            throw new ServiceNotFound("Resource not found");
-
-        } catch (ClientAuthenticationException e) {
-            throw new ServiceNotAllowed("Authentication failed!");
-
         } catch (Exception e) {
-            throw new ServiceError(e.getMessage());
+            throw ServiceExceptionHandler.handleException(e);
         }
     }
 
@@ -304,12 +274,8 @@ public class ApiServiceImpl implements ApiService {
 
             return api;
 
-        } catch (ClientNotFoundException e) {
-            throw new ServiceNotFound("Resource not found");
-        } catch (ClientAuthenticationException e) {
-            throw new ServiceNotAllowed("Authentication failed!");
         } catch (Exception e) {
-            throw new ServiceError(e.getMessage());
+            throw ServiceExceptionHandler.handleException(e);
         }
     }
 
@@ -335,19 +301,18 @@ public class ApiServiceImpl implements ApiService {
                 throw new ClientNotFoundException("Api does not exist!");
             }
 
-        } catch (ClientNotFoundException e) {
-            throw new ServiceNotFound("Resource not found");
-
-        } catch (ClientAuthenticationException e) {
-            throw new ServiceNotAllowed("Authentication failed!");
-
         } catch (Exception e) {
-            throw new ServiceError(e.getMessage());
+            throw ServiceExceptionHandler.handleException(e);
         }
 
-        return externalApiClient.invoke(query);
+        return externalApiClient.invoke(api.getToken(), query);
     }
 
+    /**
+     * This method iterates over a stack of commands and undos them
+     *
+     * @param commands  The stack of commands to undo
+     */
     private void rollback(Stack<Command> commands) {
         for (Command command : commands) {
             logger.warn("Reverting: {}", command.toString());
@@ -355,6 +320,12 @@ public class ApiServiceImpl implements ApiService {
         }
     }
 
+    /**
+     * Utility function to print exceptions and rollback a stack of commands
+     *
+     * @param e         The exception to print
+     * @param commands  The commands to undo
+     */
     private void handleFailure(Exception e, Stack<Command> commands) {
         logger.error("Error in Transaction! Reason: {}", e.getMessage());
         rollback(commands);
