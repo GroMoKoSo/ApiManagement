@@ -1,11 +1,21 @@
 package de.thm.apimanagement.client;
 
+import de.thm.apimanagement.client.exceptions.ClientAuthenticationException;
+import de.thm.apimanagement.client.exceptions.ClientErrorException;
+import de.thm.apimanagement.client.exceptions.ClientNotFoundException;
 import de.thm.apimanagement.entity.ToolDefinition;
+import de.thm.apimanagement.security.TokenProvider;
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.util.Arrays;
@@ -20,12 +30,15 @@ public class Spec2ToolClient {
     private static final String[] ALLOWED_FILE_TYPES = {"YAML", "JSON"};
     private static final String[] ALLOWED_FORMATS = {"OpenAPI", "RAML"};
 
+    private final Logger logger = LoggerFactory.getLogger(Spec2ToolClient.class);
+    private final TokenProvider tokenProvider;
     private final RestClient client;
-    private final String baseUrl;
 
-    public Spec2ToolClient(@Value("${spring.subservices.spec2tool.url}") String baseUrl) {
-        this.baseUrl = baseUrl;
-        this.client = RestClient.create();
+    public Spec2ToolClient(TokenProvider tokenProvider, @Value("${spring.subservices.spec2tool.url}") String baseUrl) {
+        this.tokenProvider = tokenProvider;
+        this.client = RestClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 
     /**
@@ -46,12 +59,29 @@ public class Spec2ToolClient {
             throw new IllegalArgumentException("Format not supported");
         }
 
-        return client.post()
-                .uri(baseUrl + "/convert" )
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(new Spec2ToolBody(format, fileType, spec))
-                .retrieve()
-                .body(ToolDefinition.class);
+        try {
+            return client.post()
+                    .uri("/convert" )
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new Spec2ToolBody(format, fileType, spec))
+                    .retrieve()
+                    .body(ToolDefinition.class);
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
+        }
     }
 
     /**

@@ -1,10 +1,18 @@
 package de.thm.apimanagement.client;
 
+import de.thm.apimanagement.client.exceptions.ClientAuthenticationException;
+import de.thm.apimanagement.client.exceptions.ClientErrorException;
+import de.thm.apimanagement.client.exceptions.ClientNotFoundException;
 import de.thm.apimanagement.entity.ApiWithActive;
 import de.thm.apimanagement.entity.UserWithRole;
+import de.thm.apimanagement.security.TokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
@@ -19,9 +27,12 @@ import java.util.Objects;
  */
 @Component
 public class UserManagementClient {
+    private final Logger logger = LoggerFactory.getLogger(UserManagementClient.class);
+    private final TokenProvider tokenProvider;
     private final RestClient client;
 
-    public UserManagementClient(@Value("${spring.subservices.user-management.url}") String baseUrl ) {
+    public UserManagementClient(TokenProvider tokenProvider, @Value("${spring.subservices.user-management.url}") String baseUrl ) {
+        this.tokenProvider = tokenProvider;
         this.client = RestClient.builder()
                 .baseUrl(baseUrl)
                 .build();
@@ -36,24 +47,42 @@ public class UserManagementClient {
      */
     public boolean isUserAuthorized(String user, String group) {
         if (!StringUtils.hasText(user)) {
-            throw new IllegalArgumentException("User cannot be empty");
+            throw new ClientErrorException("User cannot be empty");
         }
 
-        if (!doesUserExist(user)) throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "User does not exist");
+        if (!doesUserExist(user)) throw new ClientNotFoundException("User does not exist");
 
         // Check if user and/or group does exist. Throw errors accordingly
         if (!StringUtils.hasText(group)) {
-           return true;
+            return true;
         } else {
-            if (!doesGroupExist(group)) throw new HttpClientErrorException(
-                    HttpStatus.NOT_FOUND, "Group does not exist");
+            if (!doesGroupExist(group)) throw new ClientNotFoundException("Group does not exist");
         }
 
         // First, get all users inside the group
-        UserWithRole[] userRolesInGroup = client.get()
-                .uri("/groups/{group}/users", group)
-                .retrieve()
-                .body(UserWithRole[].class);
+        UserWithRole[] userRolesInGroup;
+        try {
+            userRolesInGroup = client.get()
+                    .uri("/groups/{group}/users", group)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .retrieve()
+                    .body(UserWithRole[].class);
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
+        }
+
 
         // Iterate through every user in the group.
         // Only when the given user has the Editor or Admin role APIs can be changed by the user in the group
@@ -61,7 +90,7 @@ public class UserManagementClient {
         assert userRolesInGroup != null;
         for (UserWithRole userWithRole : userRolesInGroup) {
             if (Objects.equals(userWithRole.getUsername(), user)
-                    && ( Objects.equals(userWithRole.getGroupRole(), "Editor")
+                    && (Objects.equals(userWithRole.getGroupRole(), "Editor")
                     || Objects.equals(userWithRole.getGroupRole(), "Admin"))) {
                 isAuthorized = true;
                 break;
@@ -79,10 +108,10 @@ public class UserManagementClient {
      */
     public boolean canInvoke(String user, String group) {
         if (!StringUtils.hasText(user)) {
-            throw new IllegalArgumentException("User cannot be empty");
+            throw new ClientErrorException("User cannot be empty");
         }
 
-        if (!doesUserExist(user)) throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "User does not exist");
+        if (!doesUserExist(user)) throw new ClientNotFoundException("User does not exist");
         if (!StringUtils.hasText(group)) {
             return true;
         } else {
@@ -91,10 +120,30 @@ public class UserManagementClient {
         }
 
         // First, get all users inside the group
-        UserWithRole[] userRolesInGroup = client.get()
-                .uri("/groups/{group}/users", group)
-                .retrieve()
-                .body(UserWithRole[].class);
+        UserWithRole[] userRolesInGroup;
+        try {
+            userRolesInGroup = client.get()
+                    .uri("/groups/{group}/users", group)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .retrieve()
+                    .body(UserWithRole[].class);
+
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
+        }
+
 
         // Iterate through every user in the group.
         // Only when the given user exists it can invoke apis in this group
@@ -120,13 +169,32 @@ public class UserManagementClient {
             throw new IllegalArgumentException("Group cannot be empty");
         }
 
-        // Add the Api to the group
-        client.post()
-                .uri("/groups/{group}/apis", group)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(apiWithActive)
-                .retrieve()
-                .body(ApiWithActive.class);
+        try {
+            // Add the Api to the group
+            client.post()
+                    .uri("/groups/{group}/apis", group)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(apiWithActive)
+                    .retrieve()
+                    .body(ApiWithActive.class);
+
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
+        }
+
     }
 
     /**
@@ -140,13 +208,32 @@ public class UserManagementClient {
             throw new IllegalArgumentException("User cannot be empty");
         }
 
-        // Add the Api to the user
-        client.post()
-                .uri("/users/{user}/apis", user)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(apiWithActive)
-                .retrieve()
-                .body(ApiWithActive.class);
+        try {
+            // Add the Api to the user
+            client.post()
+                    .uri("/users/{user}/apis", user)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(apiWithActive)
+                    .retrieve()
+                    .body(ApiWithActive.class);
+
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
+        }
+
     }
 
     /**
@@ -160,11 +247,30 @@ public class UserManagementClient {
             throw new IllegalArgumentException("Group cannot be empty");
         }
 
-        // Remove the Api from the group
-        client.delete()
-                .uri("/groups/{group}/apis/{apiId}", group, apiId)
-                .retrieve()
-                .toBodilessEntity();
+        try {
+            // Remove the Api from the group
+            client.delete()
+                    .uri("/groups/{group}/apis/{apiId}", group, apiId)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .retrieve()
+                    .toBodilessEntity();
+
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
+        }
+
     }
 
     /**
@@ -178,11 +284,29 @@ public class UserManagementClient {
             throw new IllegalArgumentException("User cannot be empty");
         }
 
-        // Remove the Api from the user
-        client.delete()
-                .uri("/users/{user}/apis/{apiId}", user, apiId)
-                .retrieve()
-                .toBodilessEntity();
+        try {
+            // Remove the Api from the user
+            client.delete()
+                    .uri("/users/{user}/apis/{apiId}", user, apiId)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .retrieve()
+                    .toBodilessEntity();
+
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
+        }
     }
 
     /**
@@ -192,10 +316,29 @@ public class UserManagementClient {
      * @return      The APIs belonging to a user or a group
      */
     public ApiWithActive[] getApisOfGroup(String group) {
-        return client.get()
-                .uri("/groups/{group}/apis", group)
-                .retrieve()
-                .body(ApiWithActive[].class);
+        try {
+            return client.get()
+                    .uri("/groups/{group}/apis", group)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .retrieve()
+                    .body(ApiWithActive[].class);
+
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
+        }
+
     }
 
     /**
@@ -205,24 +348,56 @@ public class UserManagementClient {
      * @return      The APIs belonging to a user or a group
      */
     public ApiWithActive[] getApisOfUser(String user) {
-        return client.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/users/{user}/apis")
-                        .queryParam("accessViaGroup", false)
-                        .build(user))
-                .retrieve()
-                .body(ApiWithActive[].class);
+       try {
+           return client.get()
+                   .uri(uriBuilder -> uriBuilder
+                           .path("/users/{user}/apis")
+                           .queryParam("accessViaGroup", false)
+                           .build(user))
+                   .header("Authorization", "Bearer " + tokenProvider.getToken())
+                   .retrieve()
+                   .body(ApiWithActive[].class);
+
+       } catch (OAuth2AuthenticationException e) {
+           logger.error("Authentication Exception: ", e);
+           throw new ClientAuthenticationException("Authentication Failed");
+
+       } catch (HttpClientErrorException e) {
+           logger.error("Client Error Exception: ", e);
+           HttpStatusCode status = e.getStatusCode();
+           if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+           else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+           else throw new ClientErrorException(e.getMessage());
+
+       } catch (Exception e) {
+           logger.error("Other Exception: ", e);
+           throw new ClientErrorException(e.getMessage());
+       }
     }
 
     public boolean doesUserExist(String username) {
         try {
             client.get()
                     .uri("/users/{username}", username)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
                     .retrieve()
                     .toBodilessEntity();
             return true;
+
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
         } catch (Exception e) {
-            return false;
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
         }
     }
 
@@ -230,11 +405,25 @@ public class UserManagementClient {
         try {
             client.get()
                     .uri("/groups/{group}", group)
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
                     .retrieve()
                     .toBodilessEntity();
             return true;
+
+        } catch (OAuth2AuthenticationException e) {
+            logger.error("Authentication Exception: ", e);
+            throw new ClientAuthenticationException("Authentication Failed");
+
+        } catch (HttpClientErrorException e) {
+            logger.error("Client Error Exception: ", e);
+            HttpStatusCode status = e.getStatusCode();
+            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
+            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
+            else throw new ClientErrorException(e.getMessage());
+
         } catch (Exception e) {
-            return false;
+            logger.error("Other Exception: ", e);
+            throw new ClientErrorException(e.getMessage());
         }
     }
 }
