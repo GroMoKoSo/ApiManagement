@@ -10,7 +10,6 @@ import de.thm.apimanagement.entity.*;
 import de.thm.apimanagement.repository.ApiRepository;
 import de.thm.apimanagement.service.exceptions.ServiceError;
 import de.thm.apimanagement.service.exceptions.ServiceExceptionHandler;
-import de.thm.apimanagement.service.exceptions.ServiceNotAllowed;
 import de.thm.apimanagement.service.exceptions.ServiceNotFound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -224,8 +223,8 @@ public class ApiServiceImpl implements ApiService {
     @Override
     public List<Api> fetchApiList(String user, String group) {
         try {
+            logger.debug("Getting apis from userManagement...");
             List<ApiWithActive> apiWithActive = Collections.emptyList();
-
             if (StringUtils.hasText(user)) {
                 if (!StringUtils.hasText(group)) {
                     apiWithActive = Arrays.asList(userManagementClient.getApisOfUser(user));
@@ -234,10 +233,12 @@ public class ApiServiceImpl implements ApiService {
                 }
             }
 
+            // Extract IDs in ApiWithActive into a set.
             Set<Integer> activeApiIds = apiWithActive.stream()
                     .map(ApiWithActive::getApiId)
                     .collect(Collectors.toSet());
 
+            // Filter the list, so only the APIs th user has access to are returned
             return ((List<Api>) apiRepository.findAll()).stream()
                     .filter(local -> activeApiIds.contains(local.getId()))
                     .collect(Collectors.toList());
@@ -265,10 +266,11 @@ public class ApiServiceImpl implements ApiService {
             }
 
             if (!allowedApis.isEmpty()) {
+                // Find the queried api inside allowedApis
                 boolean allowed = allowedApis.stream()
                         .anyMatch(a -> a.getApiId() == apiId);
                 if (!allowed) {
-                    throw new ServiceNotAllowed("User/group not permitted to access this API");
+                    throw new ClientNotFoundException("Api does not exist!");
                 }
             }
 
