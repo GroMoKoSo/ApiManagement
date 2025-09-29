@@ -2,9 +2,12 @@ package de.thm.apimanagement.client;
 
 import de.thm.apimanagement.entity.InvokeQuery;
 import de.thm.apimanagement.entity.InvokeResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.net.URLEncoder;
@@ -19,6 +22,7 @@ import java.util.stream.Collectors;
  */
 @Component
 public class ExternalApiClient {
+    private final Logger logger = LoggerFactory.getLogger(ExternalApiClient.class);
     private final RestClient client;
 
     public ExternalApiClient() {
@@ -28,11 +32,12 @@ public class ExternalApiClient {
     /**
      * Takes a {@link InvokeQuery}, calls the API with the query and wraps the result as an {@link InvokeResult}
      *
+     * @param token A token which can be used as a bearer token when requesting
      * @param query The {@link InvokeQuery} to execute
      * @return      The result of the external API call wrapped inside a {@link InvokeResult}
      */
-    public InvokeResult invoke(InvokeQuery query) {
-        ResponseEntity<String> response = sendRequest(query);
+    public InvokeResult invoke(String token, InvokeQuery query) {
+        ResponseEntity<String> response = sendRequest(token, query);
         return new InvokeResult(
                 response.getStatusCode().value(),
                 response.getHeaders().asSingleValueMap(),
@@ -73,10 +78,18 @@ public class ExternalApiClient {
      * Uses a {@link InvokeQuery} to send an http request
      *
      * @param query An {@link InvokeQuery} which will be used to send an http query.
+     * @param token When not empty, will be added as a Bearer token to the request headers
      * @return      A {@link ResponseEntity<String>} which contains the response of the external http request
      */
-    private ResponseEntity<String> sendRequest(InvokeQuery query) {
+    private ResponseEntity<String> sendRequest(String token, InvokeQuery query) {
         String formattedPath = formatPath(query.getRequestPath(), query.getPathParam(), query.getRequestParam());
+
+        // If the token has content, add it as a request header
+        if (StringUtils.hasText(token)) {
+            logger.info("Using bearer token: {}", token);
+            query.getHeader().put("Authorization", "Bearer " + token);
+        }
+
         HttpMethod method = switch (query.getRequestType()) {
             case GET -> HttpMethod.GET;
             case POST -> HttpMethod.POST;

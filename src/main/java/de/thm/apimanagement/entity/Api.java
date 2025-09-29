@@ -22,5 +22,6 @@ public class Api {
     private String fileType;
     @Lob
     private String spec;
+    @Lob
     private String token;
 }
