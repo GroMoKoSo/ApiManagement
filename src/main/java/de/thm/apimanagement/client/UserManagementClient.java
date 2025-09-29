@@ -1,7 +1,7 @@
 package de.thm.apimanagement.client;
 
-import de.thm.apimanagement.client.exceptions.ClientAuthenticationException;
 import de.thm.apimanagement.client.exceptions.ClientErrorException;
+import de.thm.apimanagement.client.exceptions.ClientExceptionHandler;
 import de.thm.apimanagement.client.exceptions.ClientNotFoundException;
 import de.thm.apimanagement.entity.ApiWithActive;
 import de.thm.apimanagement.entity.UserWithRole;
@@ -10,9 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
@@ -67,20 +65,8 @@ public class UserManagementClient {
                     .header("Authorization", "Bearer " + tokenProvider.getToken())
                     .retrieve()
                     .body(UserWithRole[].class);
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
 
 
@@ -128,20 +114,8 @@ public class UserManagementClient {
                     .retrieve()
                     .body(UserWithRole[].class);
 
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
 
 
@@ -179,20 +153,8 @@ public class UserManagementClient {
                     .retrieve()
                     .body(ApiWithActive.class);
 
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
 
     }
@@ -218,20 +180,8 @@ public class UserManagementClient {
                     .retrieve()
                     .body(ApiWithActive.class);
 
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
 
     }
@@ -255,20 +205,8 @@ public class UserManagementClient {
                     .retrieve()
                     .toBodilessEntity();
 
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
 
     }
@@ -292,20 +230,8 @@ public class UserManagementClient {
                     .retrieve()
                     .toBodilessEntity();
 
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
     }
 
@@ -323,20 +249,8 @@ public class UserManagementClient {
                     .retrieve()
                     .body(ApiWithActive[].class);
 
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
 
     }
@@ -358,20 +272,8 @@ public class UserManagementClient {
                    .retrieve()
                    .body(ApiWithActive[].class);
 
-       } catch (OAuth2AuthenticationException e) {
-           logger.error("Authentication Exception: ", e);
-           throw new ClientAuthenticationException("Authentication Failed");
-
-       } catch (HttpClientErrorException e) {
-           logger.error("Client Error Exception: ", e);
-           HttpStatusCode status = e.getStatusCode();
-           if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-           else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-           else throw new ClientErrorException(e.getMessage());
-
        } catch (Exception e) {
-           logger.error("Other Exception: ", e);
-           throw new ClientErrorException(e.getMessage());
+           throw ClientExceptionHandler.handleException(e);
        }
     }
 
@@ -384,20 +286,8 @@ public class UserManagementClient {
                     .toBodilessEntity();
             return true;
 
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
     }
 
@@ -410,20 +300,8 @@ public class UserManagementClient {
                     .toBodilessEntity();
             return true;
 
-        } catch (OAuth2AuthenticationException e) {
-            logger.error("Authentication Exception: ", e);
-            throw new ClientAuthenticationException("Authentication Failed");
-
-        } catch (HttpClientErrorException e) {
-            logger.error("Client Error Exception: ", e);
-            HttpStatusCode status = e.getStatusCode();
-            if (status == HttpStatus.UNAUTHORIZED) throw new ClientAuthenticationException("Authentication Failed");
-            else if (status == HttpStatus.NOT_FOUND) throw new ClientNotFoundException("Resource not found");
-            else throw new ClientErrorException(e.getMessage());
-
         } catch (Exception e) {
-            logger.error("Other Exception: ", e);
-            throw new ClientErrorException(e.getMessage());
+            throw ClientExceptionHandler.handleException(e);
         }
     }
 }
