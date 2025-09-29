@@ -43,7 +43,7 @@ public interface ApiService {
      *
      * @return  An array with every current API
      */
-    public List<Api> fetchApiList();
+    public List<Api> fetchApiList(String user, String group);
 
     /**
      * Gets one {@link Api} or {@code null} with a matching id.
@@ -51,7 +51,7 @@ public interface ApiService {
      * @param apiId The id of the API which should be fetched.
      * @return      The {@link Api} with a matching id or {@code null}
      */
-    public Api fetchApiById(int apiId);
+    public Api fetchApiById(int apiId, String user, String group);
 
     /**
      * Handles querying an HTTP request to an API according to the {@link InvokeQuery}

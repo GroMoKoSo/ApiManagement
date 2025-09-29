@@ -265,15 +265,71 @@ public class ApiServiceImpl implements ApiService {
     }
 
     @Override
-    public List<Api> fetchApiList() {
-        return (List<Api>) apiRepository.findAll();
+    public List<Api> fetchApiList(String user, String group) {
+        try {
+            List<ApiWithActive> apiWithActive = Collections.emptyList();
+
+            if (StringUtils.hasText(user)) {
+                if (!StringUtils.hasText(group)) {
+                    apiWithActive = Arrays.asList(userManagementClient.getApisOfUser(user));
+                } else {
+                    apiWithActive = Arrays.asList(userManagementClient.getApisOfGroup(group));
+                }
+            }
+
+            Set<Integer> activeApiIds = apiWithActive.stream()
+                    .map(ApiWithActive::getApiId)
+                    .collect(Collectors.toSet());
+
+            return ((List<Api>) apiRepository.findAll()).stream()
+                    .filter(local -> activeApiIds.contains(local.getId()))
+                    .collect(Collectors.toList());
+
+        } catch (ClientNotFoundException e) {
+            throw new ServiceNotFound("Resource not found");
+
+        } catch (ClientAuthenticationException e) {
+            throw new ServiceNotAllowed("Authentication failed!");
+
+        } catch (Exception e) {
+            throw new ServiceError(e.getMessage());
+        }
     }
 
     @Override
-    public Api fetchApiById(int apiId) {
-        Api api = apiRepository.findById(apiId).orElse(null);
-        if (api == null) throw new ServiceNotFound("Resource not found");
-        else return api;
+    public Api fetchApiById(int apiId, String user, String group) {
+        try {
+            logger.debug("Checking if api exists...");
+            Api api = apiRepository.findById(apiId).orElse(null);
+            if (api == null) throw new ClientNotFoundException("Api does not exist!");
+
+            logger.debug("Getting apis from userManagement...");
+            List<ApiWithActive> allowedApis = Collections.emptyList();
+            if (StringUtils.hasText(user)) {
+                if (!StringUtils.hasText(group)) {
+                    allowedApis = Arrays.asList(userManagementClient.getApisOfUser(user));
+                } else {
+                    allowedApis = Arrays.asList(userManagementClient.getApisOfGroup(group));
+                }
+            }
+
+            if (!allowedApis.isEmpty()) {
+                boolean allowed = allowedApis.stream()
+                        .anyMatch(a -> a.getApiId() == apiId);
+                if (!allowed) {
+                    throw new ServiceNotAllowed("User/group not permitted to access this API");
+                }
+            }
+
+            return api;
+
+        } catch (ClientNotFoundException e) {
+            throw new ServiceNotFound("Resource not found");
+        } catch (ClientAuthenticationException e) {
+            throw new ServiceNotAllowed("Authentication failed!");
+        } catch (Exception e) {
+            throw new ServiceError(e.getMessage());
+        }
     }
 
     @Override
