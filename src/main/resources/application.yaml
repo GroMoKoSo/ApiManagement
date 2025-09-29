@@ -31,6 +31,13 @@ spring:
     show-sql: true
     open-in-view: false
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://gromokoso-keycloak:8080/realms/gromokoso/protocol/openid-connect/certs
+    realm: swa2025
+
 server:
   port: 8080
 

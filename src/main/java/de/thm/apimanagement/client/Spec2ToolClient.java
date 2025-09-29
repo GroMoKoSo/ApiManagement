@@ -1,7 +1,11 @@
 package de.thm.apimanagement.client;
 
+import de.thm.apimanagement.client.exceptions.ClientExceptionHandler;
 import de.thm.apimanagement.entity.ToolDefinition;
+import de.thm.apimanagement.security.TokenProvider;
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -20,12 +24,15 @@ public class Spec2ToolClient {
     private static final String[] ALLOWED_FILE_TYPES = {"YAML", "JSON"};
     private static final String[] ALLOWED_FORMATS = {"OpenAPI", "RAML"};
 
+    private final Logger logger = LoggerFactory.getLogger(Spec2ToolClient.class);
+    private final TokenProvider tokenProvider;
     private final RestClient client;
-    private final String baseUrl;
 
-    public Spec2ToolClient(@Value("${spring.subservices.spec2tool.url}") String baseUrl) {
-        this.baseUrl = baseUrl;
-        this.client = RestClient.create();
+    public Spec2ToolClient(TokenProvider tokenProvider, @Value("${spring.subservices.spec2tool.url}") String baseUrl) {
+        this.tokenProvider = tokenProvider;
+        this.client = RestClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 
     /**
@@ -46,12 +53,17 @@ public class Spec2ToolClient {
             throw new IllegalArgumentException("Format not supported");
         }
 
-        return client.post()
-                .uri(baseUrl + "/convert" )
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(new Spec2ToolBody(format, fileType, spec))
-                .retrieve()
-                .body(ToolDefinition.class);
+        try {
+            return client.post()
+                    .uri("/convert" )
+                    .header("Authorization", "Bearer " + tokenProvider.getToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new Spec2ToolBody(format, fileType, spec))
+                    .retrieve()
+                    .body(ToolDefinition.class);
+        } catch (Exception e) {
+            throw ClientExceptionHandler.handleException(e);
+        }
     }
 
     /**
