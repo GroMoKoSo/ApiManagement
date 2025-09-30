@@ -19,10 +19,10 @@ import java.util.List;
  * @author Benjamin Michael Lange-Hermstädt
  */
 @RestController
-public class ApiController {
+public class ApiControllerImpl {
     private final ApiService apiService;
 
-    ApiController(ApiService apiService) {
+    ApiControllerImpl(ApiService apiService) {
         this.apiService = apiService;
     }
 
