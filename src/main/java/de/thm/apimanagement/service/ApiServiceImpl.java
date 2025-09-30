@@ -75,7 +75,6 @@ public class ApiServiceImpl implements ApiService {
             logger.debug("Converting api specification to MCP tool...");
             ToolDefinition toolDef = spec2ToolClient.convertSpec2Tool(
                     api.getFormat(),
-                    api.getFileType(),
                     api.getSpec());
 
             logger.debug("Updating MCP tool in MCP server...");
@@ -133,7 +132,6 @@ public class ApiServiceImpl implements ApiService {
             logger.debug("Converting api specification to MCP tool...");
             ToolDefinition toolDef = spec2ToolClient.convertSpec2Tool(
                     api.getFormat(),
-                    api.getFileType(),
                     api.getSpec());
 
             logger.debug("Updating MCP tool in McpManagement...");

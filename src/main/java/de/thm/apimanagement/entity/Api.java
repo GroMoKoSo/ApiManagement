@@ -21,7 +21,6 @@ public class Api {
     private String description;
     private String version;
     private String format;
-    private String fileType;
     @Convert(converter = JsonToMapConverter.class)
     @Lob
     private Map<String, Object> spec;
@@ -34,7 +33,6 @@ public class Api {
         this.description = other.description;
         this.version = other.version;
         this.format = other.format;
-        this.fileType = other.fileType;
         this.spec = other.spec;
         this.token = other.token;
     }
@@ -44,9 +42,6 @@ public class Api {
     public void normalizeFields() {
         if (format != null) {
             format = format.toLowerCase();
-        }
-        if (fileType != null) {
-            fileType = fileType.toLowerCase();
         }
     }
 }
