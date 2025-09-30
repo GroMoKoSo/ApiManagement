@@ -22,7 +22,6 @@ import java.util.Map;
  */
 @Component
 public class Spec2ToolClient {
-    private static final String[] ALLOWED_FILE_TYPES = {"yaml", "json"};
     private static final String[] ALLOWED_FORMATS = {"openapi", "raml"};
 
     private final Logger logger = LoggerFactory.getLogger(Spec2ToolClient.class);
@@ -37,32 +36,28 @@ public class Spec2ToolClient {
     }
 
     /**
-     * Takes an API specification with a given format and fileType and returns a {@link ToolDefinition} containing
+     * Takes an API specification with a given format  and returns a {@link ToolDefinition} containing
      * a definition for an MCP tool.
      *
      * @param format    Specification format. Can be OpenAPI or RAML
-     * @param fileType  The filetype which the string is formatted in. Can be JSON or YAML
      * @param spec      The string containing the specification
      * @return          The definition of an MCP tool as a {@link ToolDefinition} object
      */
-    public ToolDefinition convertSpec2Tool(String format, String fileType, Map<String, Object> spec) {
-        if (!StringUtils.hasText(format) || !StringUtils.hasText(fileType)) {
-            throw new IllegalArgumentException("Format and file type cannot be empty");
-        } else if (!Arrays.asList(ALLOWED_FILE_TYPES).contains(fileType.toLowerCase())) {
-            throw new IllegalArgumentException("File Type not supported");
+    public ToolDefinition convertSpec2Tool(String format, Map<String, Object> spec) {
+        if (!StringUtils.hasText(format)) {
+            throw new IllegalArgumentException("Format cannot be empty");
         } else if (!Arrays.asList(ALLOWED_FORMATS).contains(format.toLowerCase())) {
             throw new IllegalArgumentException("Format not supported");
         }
 
         format = format.toLowerCase();
-        fileType = fileType.toLowerCase();
 
         try {
             return client.post()
                     .uri("/convert" )
                     .header("Authorization", "Bearer " + tokenProvider.getToken())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new Spec2ToolBody(format, fileType, spec))
+                    .body(new Spec2ToolBody(format, spec))
                     .retrieve()
                     .body(ToolDefinition.class);
         } catch (Exception e) {
@@ -77,12 +72,10 @@ public class Spec2ToolClient {
     @Data
     public static class Spec2ToolBody {
         private String format;
-        private String fileType;
         private Map<String, Object> spec;
 
-        public Spec2ToolBody(String format, String fileType, Map<String, Object> spec) {
+        public Spec2ToolBody(String format, Map<String, Object> spec) {
             this.format = format;
-            this.fileType = fileType;
             this.spec = spec;
         }
     }
