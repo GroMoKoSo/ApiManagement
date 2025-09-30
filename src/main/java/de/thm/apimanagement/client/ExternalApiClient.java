@@ -1,8 +1,5 @@
 package de.thm.apimanagement.client;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.thm.apimanagement.client.exceptions.ClientErrorException;
 import de.thm.apimanagement.entity.InvokeQuery;
 import de.thm.apimanagement.entity.InvokeResult;
 import org.slf4j.Logger;
@@ -15,7 +12,6 @@ import org.springframework.web.client.RestClient;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -28,11 +24,9 @@ import java.util.stream.Collectors;
 public class ExternalApiClient {
     private final Logger logger = LoggerFactory.getLogger(ExternalApiClient.class);
     private final RestClient client;
-    private final ObjectMapper objectMapper;
 
     public ExternalApiClient() {
         this.client = RestClient.create();
-        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -44,24 +38,10 @@ public class ExternalApiClient {
      */
     public InvokeResult invoke(String token, InvokeQuery query) {
         ResponseEntity<String> response = sendRequest(token, query);
-
-        Map<String, Object> responseBody = Collections.emptyMap();
-        try {
-            if (response.getBody() != null && !response.getBody().isBlank()) {
-                responseBody = objectMapper.readValue(
-                        response.getBody(),
-                        new TypeReference<Map<String, Object>>() {}
-                );
-            }
-        } catch (Exception e) {
-            throw new ClientErrorException("Failed to parse request body");
-        }
-
         return new InvokeResult(
                 response.getStatusCode().value(),
                 response.getHeaders().asSingleValueMap(),
-                responseBody
-        );
+                response.getBody());
     }
 
     /**

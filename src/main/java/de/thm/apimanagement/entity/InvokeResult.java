@@ -10,5 +10,5 @@ import java.util.Map;
 public class InvokeResult {
     private int responseCode;
     private Map<String, String> header;
-    private Map<String, Object> body;
+    private String body;
 }
