@@ -10,11 +10,14 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 
 @Tag(name = "APIs", description = "CRUD & invocation for API definitions")
-public class ApiManagementController {
+
+public interface ApiManagementController {
 
     @Operation(
             summary = "List APIs",
@@ -22,7 +25,9 @@ public class ApiManagementController {
     )
     @ApiResponse(responseCode = "200", description = "List of APIs returned",
             content = @Content(schema = @Schema(implementation = Api.class)))
-    ResponseEntity<List<Api>> getApis();
+    @GetMapping("/apis")
+    ResponseEntity<List<Api>> getApis(@Parameter(description = "Requesting Group") String group,
+                                      @Parameter(description = "Requesting user", required = true) String user);
 
     @Operation(
             summary = "Create an API",
@@ -30,9 +35,11 @@ public class ApiManagementController {
     )
     @ApiResponse(responseCode = "200", description = "API created",
             content = @Content(schema = @Schema(implementation = Api.class)))
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(responseCode = "403", description = "Not allowed")
     @ApiResponse(responseCode = "404", description = "Related service not found")
-    @ApiResponse(responseCode = "500", description = "Server error")
+    @ApiResponse(responseCode = "500", description = "Internal Server error")
+    @PostMapping("/apis")
     ResponseEntity<Api> postApi(
             @RequestBody(
                     description = "API payload",
@@ -49,8 +56,11 @@ public class ApiManagementController {
     )
     @ApiResponse(responseCode = "200", description = "API returned",
             content = @Content(schema = @Schema(implementation = Api.class)))
+    @GetMapping("/apis/{id}")
     ResponseEntity<Api> getApi(
-            @Parameter(description = "API id", required = true) int id
+            @Parameter(description = "API id", required = true) int id,
+            @Parameter(description = "Requesting Group") String Group,
+            @Parameter(description = "Requesting user", required = true) String user
     );
 
     @Operation(
@@ -59,9 +69,11 @@ public class ApiManagementController {
     )
     @ApiResponse(responseCode = "200", description = "API updated",
             content = @Content(schema = @Schema(implementation = Api.class)))
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(responseCode = "403", description = "Not allowed")
     @ApiResponse(responseCode = "404", description = "API or related service not found")
-    @ApiResponse(responseCode = "500", description = "Server error")
+    @ApiResponse(responseCode = "500", description = "Internal Server error")
+    @PutMapping("/apis/{id}")
     ResponseEntity<Api> putApi(
             @RequestBody(
                     description = "New API payload",
@@ -78,9 +90,11 @@ public class ApiManagementController {
             description = "Deletes an API definition by id."
     )
     @ApiResponse(responseCode = "204", description = "Deleted")
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(responseCode = "403", description = "Not allowed")
     @ApiResponse(responseCode = "404", description = "API not found")
-    @ApiResponse(responseCode = "500", description = "Server error")
+    @ApiResponse(responseCode = "500", description = "Internal Server error")
+    @DeleteMapping("/apis/{id}")
     ResponseEntity<?> deleteApi(
             @Parameter(description = "API id", required = true) int id,
             @Parameter(description = "Requesting user", required = true) String user,
@@ -93,9 +107,11 @@ public class ApiManagementController {
     )
     @ApiResponse(responseCode = "200", description = "Invocation result",
             content = @Content(schema = @Schema(implementation = InvokeResult.class)))
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(responseCode = "403", description = "Not allowed")
     @ApiResponse(responseCode = "404", description = "API not found")
-    @ApiResponse(responseCode = "500", description = "Server error")
+    @ApiResponse(responseCode = "500", description = "Internal Server error")
+    @PostMapping("/apis/{id}/invoke")
     ResponseEntity<InvokeResult> invokeApi(
             @RequestBody(
                     description = "Invocation parameters",
@@ -107,4 +123,4 @@ public class ApiManagementController {
             @Parameter(description = "Optional group") String group
     );
 }
-}
+

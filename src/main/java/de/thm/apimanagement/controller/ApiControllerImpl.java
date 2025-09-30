@@ -19,7 +19,7 @@ import java.util.List;
  * @author Benjamin Michael Lange-Hermstädt
  */
 @RestController
-public class ApiControllerImpl {
+public class ApiControllerImpl implements ApiManagementController {
     private final ApiService apiService;
 
     ApiControllerImpl(ApiService apiService) {
@@ -31,8 +31,8 @@ public class ApiControllerImpl {
      *
      * @return  A list of {@link Api}s
      */
-    @GetMapping("/apis")
-    public ResponseEntity<List<Api>> getApis() {
+
+    public ResponseEntity<List<Api>> getApis(String group, String user) {
         return ResponseEntity.ok(apiService.fetchApiList());
     }
 
@@ -42,7 +42,7 @@ public class ApiControllerImpl {
      * @param api   The {@link Api} object to POST
      * @return      The newly created object
      */
-    @PostMapping("/apis")
+
     public ResponseEntity<Api> postApi(
             @Validated @RequestBody Api api,
             @RequestParam("user") String user,
@@ -63,8 +63,8 @@ public class ApiControllerImpl {
      * @param id    The id of the {@link Api} object to get
      * @return      The queried {@link Api} object
      */
-    @GetMapping("/apis/{id}")
-    public ResponseEntity<Api> getApi(@PathVariable int id) {
+
+    public ResponseEntity<Api> getApi(@PathVariable int id, String user, String group) {
         return ResponseEntity.ok(apiService.fetchApiById(id));
     }
 
@@ -75,7 +75,7 @@ public class ApiControllerImpl {
      * @param id    The current {@link Api} object to be replaced
      * @return      The updated {@link Api} object
      */
-    @PutMapping("/apis/{id}")
+
     public ResponseEntity<Api> putApi(
             @RequestBody Api api,
             @PathVariable("id") int id,
@@ -97,7 +97,7 @@ public class ApiControllerImpl {
      * @param id    The id of the {@link Api} to delete
      * @return      An http response with code 204 - No content on success
      */
-    @DeleteMapping("/apis/{id}")
+
     public ResponseEntity<?> deleteApi(
             @PathVariable("id") int id,
             @RequestParam("user") String user,
@@ -112,7 +112,7 @@ public class ApiControllerImpl {
         }
     }
 
-    @PostMapping("/apis/{id}/invoke")
+
     public ResponseEntity<InvokeResult> invokeApi(
             @RequestBody InvokeQuery query,
             @PathVariable("id") int id,
