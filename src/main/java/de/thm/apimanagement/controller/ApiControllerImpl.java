@@ -1,4 +1,5 @@
 package de.thm.apimanagement.controller;
+
 import de.thm.apimanagement.entity.Api;
 import de.thm.apimanagement.entity.InvokeQuery;
 import de.thm.apimanagement.entity.InvokeResult;
@@ -8,7 +9,10 @@ import de.thm.apimanagement.service.exceptions.ServiceNotFound;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -31,7 +35,6 @@ public class ApiControllerImpl implements ApiManagementController {
      *
      * @return  A list of {@link Api}s
      */
-
     public ResponseEntity<List<Api>> getApis(String group, String user) {
         return ResponseEntity.ok(apiService.fetchApiList());
     }
@@ -42,7 +45,6 @@ public class ApiControllerImpl implements ApiManagementController {
      * @param api   The {@link Api} object to POST
      * @return      The newly created object
      */
-
     public ResponseEntity<Api> postApi(
             @Validated @RequestBody Api api,
             @RequestParam("user") String user,
@@ -56,14 +58,12 @@ public class ApiControllerImpl implements ApiManagementController {
         }
 
     }
-
     /**
      * Handles GET requests for /apis/{id}
      *
      * @param id    The id of the {@link Api} object to get
      * @return      The queried {@link Api} object
      */
-
     public ResponseEntity<Api> getApi(@PathVariable int id, String user, String group) {
         return ResponseEntity.ok(apiService.fetchApiById(id));
     }
@@ -75,7 +75,6 @@ public class ApiControllerImpl implements ApiManagementController {
      * @param id    The current {@link Api} object to be replaced
      * @return      The updated {@link Api} object
      */
-
     public ResponseEntity<Api> putApi(
             @RequestBody Api api,
             @PathVariable("id") int id,
@@ -97,7 +96,6 @@ public class ApiControllerImpl implements ApiManagementController {
      * @param id    The id of the {@link Api} to delete
      * @return      An http response with code 204 - No content on success
      */
-
     public ResponseEntity<?> deleteApi(
             @PathVariable("id") int id,
             @RequestParam("user") String user,
