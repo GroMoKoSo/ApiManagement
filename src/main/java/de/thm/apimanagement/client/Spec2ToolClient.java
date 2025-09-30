@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Spec2ToolClient is responsible for communicating with the Spec2Tool subsystem
@@ -21,8 +22,8 @@ import java.util.Arrays;
  */
 @Component
 public class Spec2ToolClient {
-    private static final String[] ALLOWED_FILE_TYPES = {"YAML", "JSON"};
-    private static final String[] ALLOWED_FORMATS = {"OpenAPI", "RAML"};
+    private static final String[] ALLOWED_FILE_TYPES = {"yaml", "json"};
+    private static final String[] ALLOWED_FORMATS = {"openapi", "raml"};
 
     private final Logger logger = LoggerFactory.getLogger(Spec2ToolClient.class);
     private final TokenProvider tokenProvider;
@@ -44,14 +45,17 @@ public class Spec2ToolClient {
      * @param spec      The string containing the specification
      * @return          The definition of an MCP tool as a {@link ToolDefinition} object
      */
-    public ToolDefinition convertSpec2Tool(String format, String fileType, String spec) {
-        if (!StringUtils.hasText(format) || !StringUtils.hasText(fileType) || !StringUtils.hasText(spec)) {
-            throw new IllegalArgumentException("Format, File Type and Spec cannot be empty");
-        } else if (!Arrays.asList(ALLOWED_FILE_TYPES).contains(fileType)) {
+    public ToolDefinition convertSpec2Tool(String format, String fileType, Map<String, Object> spec) {
+        if (!StringUtils.hasText(format) || !StringUtils.hasText(fileType)) {
+            throw new IllegalArgumentException("Format and file type cannot be empty");
+        } else if (!Arrays.asList(ALLOWED_FILE_TYPES).contains(fileType.toLowerCase())) {
             throw new IllegalArgumentException("File Type not supported");
-        } else if (!Arrays.asList(ALLOWED_FORMATS).contains(format)) {
+        } else if (!Arrays.asList(ALLOWED_FORMATS).contains(format.toLowerCase())) {
             throw new IllegalArgumentException("Format not supported");
         }
+
+        format = format.toLowerCase();
+        fileType = fileType.toLowerCase();
 
         try {
             return client.post()
@@ -74,9 +78,9 @@ public class Spec2ToolClient {
     public static class Spec2ToolBody {
         private String format;
         private String fileType;
-        private String spec;
+        private Map<String, Object> spec;
 
-        public Spec2ToolBody(String format, String fileType, String spec) {
+        public Spec2ToolBody(String format, String fileType, Map<String, Object> spec) {
             this.format = format;
             this.fileType = fileType;
             this.spec = spec;

@@ -22,15 +22,14 @@ public class UpdateApiInRepositoryCommand implements Command {
     public void execute() {
         apiRepository.findById(apiId).ifPresent(apiDb -> {
             // Backup current state for undo
-            backupApi = new Api(apiDb.getId(), apiDb.getName(), apiDb.getDescription(),
-                    apiDb.getVersion(), apiDb.getFormat(), apiDb.getFileType(), apiDb.getSpec(), apiDb.getToken());
+            backupApi = new Api(apiDb);
 
             // Update fields only if the new data is not null/blank
             updateIfNotBlank(newApi::getName, apiDb::setName);
             updateIfNotBlank(newApi::getDescription, apiDb::setDescription);
             updateIfNotBlank(newApi::getVersion, apiDb::setVersion);
             updateIfNotBlank(newApi::getFormat, apiDb::setFormat);
-            updateIfNotBlank(newApi::getSpec, apiDb::setSpec);
+            updateIfNotNull(newApi::getSpec, apiDb::setSpec);
             updateIfNotBlank(newApi::getToken, apiDb::setToken);
 
             apiRepository.save(apiDb);
@@ -40,24 +39,20 @@ public class UpdateApiInRepositoryCommand implements Command {
     @Override
     public void undo() {
         if (backupApi != null) {
-            apiRepository.findById(apiId).ifPresent(apiDb -> {
-                // Restore all fields from backup
-                apiDb.setName(backupApi.getName());
-                apiDb.setDescription(backupApi.getDescription());
-                apiDb.setVersion(backupApi.getVersion());
-                apiDb.setFormat(backupApi.getFormat());
-                apiDb.setSpec(backupApi.getSpec());
-                apiDb.setToken(backupApi.getToken());
-
-                apiRepository.save(apiDb);
-            });
+            apiRepository.save(backupApi);
         }
     }
 
-    // Helper to avoid repetitive null/blank checks
     private void updateIfNotBlank(Supplier<String> getter, Consumer<String> setter) {
         String value = getter.get();
         if (value != null && !value.isBlank()) {
+            setter.accept(value);
+        }
+    }
+
+    private <T> void updateIfNotNull(Supplier<T> getter, Consumer<T> setter) {
+        T value = getter.get();
+        if (value != null) {
             setter.accept(value);
         }
     }
