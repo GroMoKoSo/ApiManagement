@@ -7,9 +7,21 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.web.client.HttpClientErrorException;
 
+/**
+ * ClientExceptionHandler is responsible for converting exceptions which occur
+ * in clients to client-specific exceptions
+ *
+ * @author Justin Wolek
+ */
 public class ClientExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(ClientExceptionHandler.class);
 
+    /**
+     * Converts exceptions which occur in clients to client-specific exceptions
+     *
+     * @param e The exception which has been thrown
+     * @return  The corresponding client-specific exception
+     */
     public static RuntimeException handleException(Exception e) {
         if (e instanceof OAuth2AuthenticationException) {
             logger.error("Authentication Exception: ", e);

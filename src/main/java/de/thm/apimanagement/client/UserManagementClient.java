@@ -1,22 +1,15 @@
 package de.thm.apimanagement.client;
 
-import de.thm.apimanagement.client.exceptions.ClientErrorException;
 import de.thm.apimanagement.client.exceptions.ClientExceptionHandler;
-import de.thm.apimanagement.client.exceptions.ClientNotFoundException;
 import de.thm.apimanagement.entity.ApiWithActive;
-import de.thm.apimanagement.entity.UserWithRole;
 import de.thm.apimanagement.security.TokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
-
-import java.util.Objects;
 
 /**
  * UserManagementClient is responsible for communicating with the UserManagementClient subsystem
@@ -34,102 +27,6 @@ public class UserManagementClient {
         this.client = RestClient.builder()
                 .baseUrl(baseUrl)
                 .build();
-    }
-
-    /**
-     * Checks if a user is authenticated to perform actions for a certain user or group
-     *
-     * @param user  The user which is performing an action
-     * @param group The group which an action MAY be performed on. Keep emtpy to perform the check on the user
-     * @return      a {@code boolean} representing if actions are allowed or not.
-     */
-    public boolean isUserAuthorized(String user, String group) {
-        if (!StringUtils.hasText(user)) {
-            throw new ClientErrorException("User cannot be empty");
-        }
-
-        if (!doesUserExist(user)) throw new ClientNotFoundException("User does not exist");
-
-        // Check if user and/or group does exist. Throw errors accordingly
-        if (!StringUtils.hasText(group)) {
-            return true;
-        } else {
-            if (!doesGroupExist(group)) throw new ClientNotFoundException("Group does not exist");
-        }
-
-        // First, get all users inside the group
-        UserWithRole[] userRolesInGroup;
-        try {
-            userRolesInGroup = client.get()
-                    .uri("/groups/{group}/users", group)
-                    .header("Authorization", "Bearer " + tokenProvider.getToken())
-                    .retrieve()
-                    .body(UserWithRole[].class);
-        } catch (Exception e) {
-            throw ClientExceptionHandler.handleException(e);
-        }
-
-
-        // Iterate through every user in the group.
-        // Only when the given user has the Editor or Admin role APIs can be changed by the user in the group
-        boolean isAuthorized = false;
-        assert userRolesInGroup != null;
-        for (UserWithRole userWithRole : userRolesInGroup) {
-            if (Objects.equals(userWithRole.getUsername(), user)
-                    && (Objects.equals(userWithRole.getGroupRole(), "Editor")
-                    || Objects.equals(userWithRole.getGroupRole(), "Admin"))) {
-                isAuthorized = true;
-                break;
-            }
-        }
-        return isAuthorized;
-    }
-
-    /**
-     * Checks if a given user is theoretically allowed to invoke their own apis or apis in a group
-     *
-     * @param user  The user which tries to invoke an api
-     * @param group The group where a user might try to invoke an api
-     * @return A boolean representing if a user can invoke an api
-     */
-    public boolean canInvoke(String user, String group) {
-        if (!StringUtils.hasText(user)) {
-            throw new ClientErrorException("User cannot be empty");
-        }
-
-        if (!doesUserExist(user)) throw new ClientNotFoundException("User does not exist");
-        if (!StringUtils.hasText(group)) {
-            return true;
-        } else {
-            if (!doesGroupExist(group)) throw new HttpClientErrorException(
-                    HttpStatus.NOT_FOUND, "Group does not exist");
-        }
-
-        // First, get all users inside the group
-        UserWithRole[] userRolesInGroup;
-        try {
-            userRolesInGroup = client.get()
-                    .uri("/groups/{group}/users", group)
-                    .header("Authorization", "Bearer " + tokenProvider.getToken())
-                    .retrieve()
-                    .body(UserWithRole[].class);
-
-        } catch (Exception e) {
-            throw ClientExceptionHandler.handleException(e);
-        }
-
-
-        // Iterate through every user in the group.
-        // Only when the given user exists it can invoke apis in this group
-        boolean isAuthorized = false;
-        assert userRolesInGroup != null;
-        for (UserWithRole userWithRole : userRolesInGroup) {
-            if (Objects.equals(userWithRole.getUsername(), user)) {
-                isAuthorized = true;
-                break;
-            }
-        }
-        return isAuthorized;
     }
 
     /**
@@ -275,33 +172,5 @@ public class UserManagementClient {
        } catch (Exception e) {
            throw ClientExceptionHandler.handleException(e);
        }
-    }
-
-    public boolean doesUserExist(String username) {
-        try {
-            client.get()
-                    .uri("/users/{username}", username)
-                    .header("Authorization", "Bearer " + tokenProvider.getToken())
-                    .retrieve()
-                    .toBodilessEntity();
-            return true;
-
-        } catch (Exception e) {
-            throw ClientExceptionHandler.handleException(e);
-        }
-    }
-
-    public boolean doesGroupExist(String group) {
-        try {
-            client.get()
-                    .uri("/groups/{group}", group)
-                    .header("Authorization", "Bearer " + tokenProvider.getToken())
-                    .retrieve()
-                    .toBodilessEntity();
-            return true;
-
-        } catch (Exception e) {
-            throw ClientExceptionHandler.handleException(e);
-        }
     }
 }

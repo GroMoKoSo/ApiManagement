@@ -17,6 +17,7 @@ public class SecurityConfig {
                 .cors(cors -> {}) // <-- wichtig: CORS in der Security-Kette aktivieren
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Preflight erlauben
+                        .requestMatchers("/.well-known/**", "/swagger-ui/**", "/v3/api-docs*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth

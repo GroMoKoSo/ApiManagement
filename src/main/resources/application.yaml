@@ -41,6 +41,8 @@ spring:
 server:
   port: 8080
 
+cors-allowed-origins: "http://localhost:8080"
+
 logging:
   level:
     de.thm.apimanagement: DEBUG
@@ -59,6 +61,8 @@ spring:
     spec2tool:
       url: http://gromokoso-spec2tool:8080
 
+cors-allowed-origins: "http://localhost:5173"
+
 ---
 # Preconfigured profile for deployment to the swa thm server
 spring:
@@ -72,3 +76,5 @@ spring:
       url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-mcpmanagement
     spec2tool:
       url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-spec2tool
+
+cors-allowed-origins: "https://zdh-swa-muenker.zdh.thm.de/gromokoso"

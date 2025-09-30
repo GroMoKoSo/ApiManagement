@@ -82,7 +82,11 @@ public class ExternalApiClient {
      * @return      A {@link ResponseEntity<String>} which contains the response of the external http request
      */
     private ResponseEntity<String> sendRequest(String token, InvokeQuery query) {
-        String formattedPath = formatPath(query.getRequestPath(), query.getPathParam(), query.getRequestParam());
+        Map<String, String> pathParam = query.getPathParam() != null ? query.getPathParam() : Map.of();
+        Map<String, String> requestParameter = query.getRequestParam() != null ? query.getRequestParam() : Map.of();
+        Map<String, String> headers = query.getHeader() != null ? query.getHeader() : Map.of();
+
+        String formattedPath = formatPath(query.getRequestPath(), pathParam, requestParameter);
 
         // If the token has content, add it as a request header
         if (StringUtils.hasText(token)) {
@@ -98,9 +102,10 @@ public class ExternalApiClient {
             case DELETE -> HttpMethod.DELETE;
         };
 
+
         return client.method(method)
                 .uri(formattedPath)
-                .headers(httpHeaders -> query.getHeader().forEach(httpHeaders::add))
+                .headers(httpHeaders -> headers.forEach(httpHeaders::add))
                 .body(query.getBody())
                 .exchange((request, response) -> ResponseEntity
                         .status(response.getStatusCode())
