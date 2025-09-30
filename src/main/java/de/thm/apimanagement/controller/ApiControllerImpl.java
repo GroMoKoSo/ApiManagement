@@ -7,7 +7,10 @@ import de.thm.apimanagement.security.TokenProvider;
 import de.thm.apimanagement.service.ApiService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -18,11 +21,11 @@ import java.util.List;
  * @author Benjamin Michael Lange-Hermstädt
  */
 @RestController
-public class ApiController {
+public class ApiControllerImpl implements ApiManagementController {
     private final ApiService apiService;
     private final TokenProvider tokenProvider;
 
-    ApiController(TokenProvider tokenProvider, ApiService apiService) {
+    ApiControllerImpl(TokenProvider tokenProvider, ApiService apiService) {
         this.tokenProvider = tokenProvider;
         this.apiService = apiService;
     }
@@ -32,7 +35,6 @@ public class ApiController {
      *
      * @return  A list of {@link Api}s
      */
-    @GetMapping("/apis")
     public ResponseEntity<List<Api>> getApis(
             @RequestParam("user") String user,
             @RequestParam(value = "group", required = false) String group) {
@@ -46,7 +48,6 @@ public class ApiController {
      * @param api   The {@link Api} object to POST
      * @return      The newly created object
      */
-    @PostMapping("/apis")
     public ResponseEntity<Api> postApi(
             @Validated @RequestBody Api api,
             @RequestParam("user") String user,
@@ -61,7 +62,6 @@ public class ApiController {
      * @param id    The id of the {@link Api} object to get
      * @return      The queried {@link Api} object
      */
-    @GetMapping("/apis/{id}")
     public ResponseEntity<Api> getApi(
             @PathVariable int id,
             @RequestParam("user") String user,
@@ -77,7 +77,6 @@ public class ApiController {
      * @param id    The current {@link Api} object to be replaced
      * @return      The updated {@link Api} object
      */
-    @PutMapping("/apis/{id}")
     public ResponseEntity<Api> putApi(
             @RequestBody Api api,
             @PathVariable("id") int id,
@@ -93,7 +92,6 @@ public class ApiController {
      * @param id    The id of the {@link Api} to delete
      * @return      An http response with code 204 - No content on success
      */
-    @DeleteMapping("/apis/{id}")
     public ResponseEntity<?> deleteApi(
             @PathVariable("id") int id,
             @RequestParam("user") String user,
@@ -103,7 +101,7 @@ public class ApiController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/apis/{id}/invoke")
+
     public ResponseEntity<InvokeResult> invokeApi(
             @RequestBody InvokeQuery query,
             @PathVariable("id") int id,
