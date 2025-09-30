@@ -182,6 +182,15 @@ public class ApiServiceImpl implements ApiService {
                 throw new ClientNotFoundException("Api does not exist!");
             }
 
+            logger.debug("Deleting MCP tool in MCP server...");
+            ToolDefinition mcpManagementToolBackup = mcpManagementClient.getToolWithId(apiId);
+            if (mcpManagementToolBackup != null) {
+                DeleteMcpToolCommand deleteMcpToolCommand = new DeleteMcpToolCommand(
+                        mcpManagementClient, apiId, mcpManagementToolBackup);
+                deleteMcpToolCommand.execute();
+                commands.add(deleteMcpToolCommand);
+            }
+
             if (!StringUtils.hasText(group)) {
                 logger.debug("Deleting api in user in UserManagement...");
                 DeleteApiFromUserCommand deleteApiFromUserCommand = new DeleteApiFromUserCommand(
@@ -194,16 +203,6 @@ public class ApiServiceImpl implements ApiService {
                         userManagementClient, group, userManagementApiBackup);
                 deleteApiFromGroupCommand.execute();
                 commands.add(deleteApiFromGroupCommand);
-            }
-
-
-            logger.debug("Deleting MCP tool in MCP server...");
-            ToolDefinition mcpManagementToolBackup = mcpManagementClient.getToolWithId(apiId);
-            if (mcpManagementToolBackup != null) {
-                DeleteMcpToolCommand deleteMcpToolCommand = new DeleteMcpToolCommand(
-                        mcpManagementClient, apiId, mcpManagementToolBackup);
-                deleteMcpToolCommand.execute();
-                commands.add(deleteMcpToolCommand);
             }
 
             logger.debug("Deleting api in repository...");
