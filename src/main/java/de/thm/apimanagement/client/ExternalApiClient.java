@@ -59,7 +59,7 @@ public class ExternalApiClient {
     private String formatPath(String requestPath, Map<String, String> pathParameter, Map<String, String> requestParameter) {
         // Replace path parameter placeholders with actual values
         for (Map.Entry<String, String> entry : pathParameter.entrySet()) {
-            requestPath = requestPath.replace("<" + entry.getKey() + ">", entry.getValue());
+            requestPath = requestPath.replace("{" + entry.getKey() + "}", entry.getValue());
         }
 
         // URLEncoder makes handling spaces in requestParameters WAY easier.
