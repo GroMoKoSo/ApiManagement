@@ -32,8 +32,9 @@ public interface ApiManagementController {
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @GetMapping("/apis")
-    ResponseEntity<List<Api>> getApis(@Parameter(description = "Requesting group") String group,
-                                      @Parameter(description = "Requesting user", required = true) String user);
+    ResponseEntity<List<Api>> getApis(
+            @Parameter(description = "Requesting user", required = true) String user,
+            @Parameter(description = "Requesting group") String group);
 
     @Operation(
             summary = "Create an API",
@@ -69,8 +70,8 @@ public interface ApiManagementController {
     @GetMapping("/apis/{id}")
     ResponseEntity<Api> getApi(
             @PathVariable int id,
-            @Parameter(description = "Requesting Group") String Group,
-            @Parameter(description = "Requesting user", required = true) String user
+            @Parameter(description = "Requesting user", required = true) String user,
+            @Parameter(description = "Requesting group") String group
     );
 
     @Operation(
