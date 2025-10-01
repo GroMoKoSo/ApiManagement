@@ -28,10 +28,6 @@ stages:
 .deploy_container_template:
   stage: deploy
   script:
-    - docker stop gromokoso_apimanagement || true
-    - docker stop gromokoso_apimanagement_db || true
-    - docker rm gromokoso_apimanagement || true
-    - docker rm gromokoso_apimanagement_db || true
     - docker stop $CONTAINER_NAME || true
     - docker rm $CONTAINER_NAME || true
     - docker network create internal_net || true
