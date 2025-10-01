@@ -6,8 +6,8 @@ cache:
   
 variables:
   DOCKER_IMAGE_APP: $CI_PROJECT_PATH_SLUG:latest
-  CONTAINER_NAME: "gromokoso_$CI_PROJECT_NAME"
-  CONTAINER_NAME_DB: "gromokoso_${CI_PROJECT_NAME}_db"
+  CONTAINER_NAME: "gromokoso-$CI_PROJECT_NAME"
+  CONTAINER_NAME_DB: "gromokoso-${CI_PROJECT_NAME}-db"
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
 
 stages:
@@ -28,6 +28,10 @@ stages:
 .deploy_container_template:
   stage: deploy
   script:
+    - docker stop gromokoso_apimanagement || true
+    - docker stop gromokoso_apimanagement_db || true
+    - docker rm gromokoso_apimanagement || true
+    - docker rm gromokoso_apimanagement_db || true
     - docker stop $CONTAINER_NAME || true
     - docker rm $CONTAINER_NAME || true
     - docker network create internal_net || true
