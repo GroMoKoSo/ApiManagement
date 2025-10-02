@@ -77,4 +77,4 @@ spring:
     spec2tool:
       url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-spec2tool
 
-cors-allowed-origins: "https://zdh-swa-muenker.zdh.thm.de/gromokoso"
+cors-allowed-origins: "https://zdh-swa-muenker.zdh.thm.de"
