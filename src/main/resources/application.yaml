@@ -76,5 +76,11 @@ spring:
       url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-mcpmanagement
     spec2tool:
       url: https://zdh-swa-muenker.zdh.thm.de/gromokoso-spec2tool
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://zdh-swa-muenker.zdh.thm.de/keycloak/realms/swa2025
+          jwk-set-uri: https://zdh-swa-muenker.zdh.thm.de/keycloak/realms/swa2025/protocol/openid-connect/certs
 
 cors-allowed-origins: "https://zdh-swa-muenker.zdh.thm.de"
